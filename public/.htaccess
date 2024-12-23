@@ -1,0 +1,46 @@
+<IfModule mod_rewrite.c>
+    <IfModule mod_negotiation.c>
+        Options -MultiViews -Indexes
+    </IfModule>
+
+    RewriteEngine On
+
+    # Handle Authorization Header
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # Redirect Trailing Slashes If Not A Folder...
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_URI} (.+)/$
+    RewriteRule ^ %1 [L,R=301]
+
+    # Send Requests To Front Controller...
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^ index.php [L]
+</IfModule>
+
+# Desactivar el buffering y habilitar flush inmediato
+<IfModule mod_headers.c>
+    Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+    Header set Pragma "no-cache"
+    Header set X-Accel-Buffering "no"
+</IfModule>
+
+<IfModule mod_php.c>
+    php_flag output_buffering off
+    php_flag implicit_flush on
+</IfModule>
+
+# Desactivar la compresión GZIP para archivos PHP (recomendado para streaming)
+<IfModule mod_deflate.c>
+    SetEnvIfNoCase Request_URI \.php$ no-gzip
+</IfModule>
+# Evitar problemas con mmap y sendfile (recomendado para algunos servidores Apache)
+FileETag None
+EnableSendfile Off
+EnableMMAP Off
+
+# Forzar envío inmediato de datos al navegador
+SetEnv no-gzip 1
+SetEnv dont-vary 1
