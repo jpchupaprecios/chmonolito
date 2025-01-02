@@ -13,6 +13,12 @@ use Illuminate\Support\Facades\Storage;
 class AmazonProductParserV1
 {
     protected static $dom;
+    private static mixed $element;
+    private static mixed $productId;
+    private static string $fileName;
+    private static mixed $chunk;
+    private static mixed $try;
+    private static DOMXPath $xpath;
 
     private static function initHtmlDom($html)
     {
@@ -29,126 +35,102 @@ class AmazonProductParserV1
         }
     }
 
-
-
-    public static function parse($chunk, $productId, $try)
+    public static function parse($chunk, $productId, $try, &$buffer, &$config, &$globalBuffer)
     {
-        $fileName = date('YmdHis') . substr((string)microtime(), 2, 6);
+        self::$fileName = date('YmdHis') . substr((string)microtime(), 2, 6);
+        self::$productId = $productId;
+        self::$chunk = $chunk;
+        $buffer .= $chunk;
+        self::$try = $try;
+        //echo "AAAA<br>";
+        flush();
+        foreach($config as &$element){
+            self::$element = &$element;
+            $contains = self::$element["contains"];
+
+            foreach($contains as $contain){
+
+                if(self::$element["status"] == "done"){
+                    continue 2;
+                }
+
+                if($contain == "productTitle" && strpos($buffer, $contain) !== false){
+
+                    self::parseHtml($buffer);
+
+                    $title = self::getTitle();
+
+                    return self::returnElement($title, $buffer);
+                }elseif(
+                    (
+                        $contains == "priceblock_ourprice" ||
+                        $contains == "a-size-mini" ||
+                        $contains == "a-offscreen" ||
+                        $contains == "a-price-whole"
+                    ) &&
+                    strpos($buffer, 'priceblock_ourprice') !== false ||
+                    strpos($buffer, 'a-size-mini') !== false ||
+                    strpos($buffer, 'a-offscreen') !== false ||
+                    strpos($buffer, 'a-price-whole') !== false
+                ){
+                    self::parseHtml($buffer);
+
+                    $price = self::getPrice();
+
+                    return self::returnElement($price, $buffer);
+                }elseif(strpos($buffer, 'imgTagWrapper') !== false){
+                    self::parseHtml($buffer);
+                    $image = self::getImage();
+
+                    return self::returnElement($image, $buffer);
+                }elseif(strpos($buffer, 'twisterDimKeys') !== false){
+                    self::parseHtml($buffer, true);
+
+                    $currentAsin = "B07BN7D19Y";
+                    $productIdTmp = "1";
+                    $resVariants = self::parseVariants($currentAsin, $productIdTmp, self::$xpath);
+
+                    return self::returnElement($resVariants, $buffer);
+                }elseif(strpos($buffer, 'variation_color_name') !== false){
+                    self::parseHtml($buffer, true);
 
 
-        if(strpos($chunk, 'productTitle') !== false){
-            self::createHtmlFile($productId, $fileName, $chunk, $try, "title");
-            // Repara y procesa el HTML
-            $cleanHtml = self::repairHtml($chunk);
+                    $currentAsin = "B07BN7D19Y";
+                    $productIdTmp = "1";
+                    $resVariants = self::parseVariants($currentAsin, $productIdTmp, self::$xpath, true);
 
-            // Carga el DOM reparado
-            self::initHtmlDom($cleanHtml);
-            ChunkProductHelper::setTitleChunk($cleanHtml, $productId);
-            // Extrae información del DOM
-            $title = self::getTitle();
-            if($title){
-                self::createHtmlFileSuccess($productId, $fileName, $chunk, "title", $try);
-                return "<div>" . $title . "</div>";
-
+                    return self::returnElement($resVariants, $buffer);
+                }
             }
 
-            return "";
-        }elseif(
-            strpos($chunk, 'priceblock_ourprice') !== false ||
-            strpos($chunk, 'a-size-mini') !== false ||
-            strpos($chunk, 'a-offscreen') !== false ||
-            strpos($chunk, 'a-price-whole') !== false
-        ){
-            self::createHtmlFile($productId, $fileName, $chunk, $try, "price");
-            // Repara y procesa el HTML
-            $cleanHtml = self::repairHtml($chunk);
-
-            // Carga el DOM reparado
-            self::initHtmlDom($cleanHtml);
-            ChunkProductHelper::setPriceChunk($cleanHtml, $productId);
-            // Extrae información del DOM
-            $price = self::getPrice();
-
-            /*
-                [
-                    '//*[@id="priceblock_ourprice"]',
-                    '//form//*[@class="a-button a-button-selected"]//*[@class="a-size-mini"]',
-                    '//*[@id="dp-container"]//*[@id="ppd"]//*[@class="a-price"]//*[@class="a-offscreen"]',
-                    '//*[@id="dp-container"]//*[@id="ppd"]//*[contains(@class, "a-price")]//*[@class="a-offscreen"]',
-                    '//*[@id="centerCol"]//*[contains(@class, "a-price-whole")]',
-                    '//div[contains(@class, "a-price-range")]//*[@class="a-price"]//*[@class="a-offscreen"]',
-                    '//*[@id="corePrice_desktop"][.//*[contains(@class, "a-price")] and .//*[contains(@class, "a-offscreen")]]//*[@class="a-offscreen"]'
-                ];
-            */
-
-            if($price){
-
-                self::createHtmlFileSuccess($productId, $fileName, $chunk, "price", $try);
-                return "<div>" . $price . "</div>";
-
-            }
-
-            return "";
-        }elseif(strpos($chunk, 'imgTagWrapper') !== false){
-            self::createHtmlFile($productId, $fileName, $chunk, $try, "image");
-            // Repara y procesa el HTML
-            $cleanHtml = self::repairHtml($chunk);
-
-            // Carga el DOM reparado
-            self::initHtmlDom($cleanHtml);
-            ChunkProductHelper::setImageChunk($cleanHtml, $productId);
-            // Extrae información del DOM
-            $image = self::getImage();
-            if($image){
-                self::createHtmlFileSuccess($productId, $fileName, $chunk, "image", $try);
-                return "<div>" . $image . "</div><script></script>";
-
-            }
-
-            return "";
-        }elseif(strpos($chunk, 'twisterDimKeys') !== false){
-            self::createHtmlFile($productId, $fileName, $chunk, $try, "variant");
-            // Repara y procesa el HTML
-            $cleanHtml = self::repairHtml($chunk);
-
-            // Carga el DOM reparado
-            self::initHtmlDom($cleanHtml);
-            ChunkProductHelper::setVariantChunk($cleanHtml, $productId);
-
-            $xpath = new DOMXPath(self::$dom);
-            $currentAsin = "B07BN7D19Y";
-            $productIdTmp = "1";
-            $resVariants = self::parseVariants($currentAsin, $productIdTmp, $xpath);
-
-            if($resVariants){
-                self::createHtmlFileSuccess($productId, $fileName, $chunk, "variants", $try);
-                return $resVariants;
-            }
-
-            return "";
-        }elseif(strpos($chunk, 'variation_color_name') !== false){
-            // Repara y procesa el HTML
-            self::createHtmlFile($productId, $fileName, $chunk, $try, "variant_color");
-            $cleanHtml = self::repairHtml($chunk);
-            ChunkProductHelper::setVariantColorChunk($cleanHtml, $productId);
-
-            // Carga el DOM reparado
-            self::initHtmlDom($cleanHtml);
-
-            $xpath = new DOMXPath(self::$dom);
-            $currentAsin = "B07BN7D19Y";
-            $productIdTmp = "1";
-            $resVariants = self::parseVariants($currentAsin, $productIdTmp, $xpath, true);
-
-            if($resVariants){
-                self::createHtmlFileSuccess($productId, $fileName, $chunk, "variants_color", $try);
-                return $resVariants;
-            }
-
-            return "";
         }
 
-        self::createHtmlFile($productId, $fileName, $chunk, $try, "");
+        //self::createHtmlFile(self::$productId, self::$fileName, self::$chunk, self::$try, "");
+    }
+
+    private static function parseHtml($buffer, $generateXpath = false){
+        self::$element["status"] = "in_progress";
+        // Repara y procesa el HTML
+        $cleanHtml = self::repairHtml($buffer);
+
+        if($generateXpath){
+            self::$xpath = new DOMXPath(self::$dom);
+        }
+
+        // Carga el DOM reparado
+        self::initHtmlDom($cleanHtml);
+    }
+
+
+    private static function returnElement($data, &$buffer){
+        if($data){
+            self::$element["status"] = "done";
+            //self::createHtmlFileSuccess(self::$productId, self::$fileName, self::$chunk, "variants_color", self::$try);
+            $buffer = "";
+            return $data;
+        }
+
+        return "";
     }
 
     private static function getTitle(): string
@@ -353,16 +335,6 @@ class AmazonProductParserV1
         }
 
         return [];
-        /*$nodes = $xpath->query('//span[@class="a-button-inner"]');
-
-        foreach($nodes as $node){
-            $img = $xpath->query('//img', $node)->item(0);
-            if($img){
-                $result[] = $img->getAttribute('alt');
-            }
-        }
-
-        return $result;*/
     }
 
     private static function getMatchingDivs($xpath): array

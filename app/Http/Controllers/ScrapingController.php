@@ -23,11 +23,6 @@ class ScrapingController extends Controller
             usleep(500000); // Delay
         }
     }
-    public function showForm()
-    {
-        // Muestra la vista con el formulario
-        return view('scraping.form');
-    }
 
     public function performScraping(Request $request)
     {
@@ -36,7 +31,7 @@ class ScrapingController extends Controller
         $url = "https://www.amazon.com/s?k=" . urlencode($query) . "&language=es_US&page={$page}";
         $cookieName = date('Y-m-d') . '-amazon';
         $cookiePath = storage_path(self::COOKIE_PATH . $cookieName . '.txt');
-        $cookie = 'session-id=145-2848617-2390738; ...'; // Tus cookies
+        $cookie = 'skin=noskin; session-id=133-0374827-0627531; session-id-time=2082787201l; i18n-prefs=USD; ubid-main=132-3903942-5106812; session-token=QIlYNwirLg5xMnGixDgE37MZB5bKMZDTq2aINLM163f0CDiDnHrlWWaiZJEa7/iSbMqHY8enYF3pXhTBv26fzqliS3TTLAB61ZkxCdtdqYEZ31+dV4AB0Mio+UKGjKqjTmf1TDAR3dX1BTMW9qb6uhhqJMLQBEEenBQC74RpCIKbl5Oi081EkNiREVOkzOjlglnexlxhBNbTvRhxf7Qw2wdwJloOe+b7cG0aBFCbNQxlcJ5tOFvfd+pMKXeqPclmMHeIQGMDqc7QONDqI3YvXV6f/s5nkXE4eVLDHklQwTfnZSFQdseDtM6dkkXp+erdTTMfIHMiaBjoaWGq3SAYBkDB6+F5iFgV; csm-hit=tb:s-AZDX3NKC7W0Z9XPN7W71|1735126737193&t:1735126737289&adb:adblk_no; amp_389c1b=3961e650-93a6-45e8-9540-eca24b1e2495...1ifupplbe.1ifuppoik.0.0.0';
 
         // Configurar streaming y encabezados
         header('Content-Type: text/html; charset=UTF-8');
@@ -46,23 +41,9 @@ class ScrapingController extends Controller
         header('Connection: keep-alive');
 
         // Enviar HTML inicial
-        echo "<!DOCTYPE html>
-<html lang='es'>
-<head>
-    <meta charset='UTF-8'>
-    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-    <title>Resultados de Amazon</title>
-    <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; margin: 20px; }
-        .result { border: 1px solid #ccc; margin: 10px 0; padding: 10px; }
-    </style>
-</head>
-<body>
-<h1 style='color: red'>Resultados de Amazon</h1>
-<div>
-    <a href='/'>Volver al formulario</a>
-</div>
-<div style='margin-top: 20px;'>";
+        echo file_get_contents(storage_path('app/template/result/before.html'));
+        echo '<main id="main" class="bg-white">';
+
 
         // Asegurarse de enviar los datos al cliente
         flush();
@@ -70,9 +51,16 @@ class ScrapingController extends Controller
         // Añadir un padding para evitar buffering
         echo str_repeat(" ", 1024);
         flush();
-
+        $proxyHost = env('OXYLABS_PROXY');
+        $proxyPort = env('OXULABS_PORT');
+        $proxyUser = env('OXYLABS_USER_US');
+        $proxyPass = env('OXYLABS_PASS');
         // Configurar cURL
         $curl = curl_init($url);
+
+        echo file_get_contents(storage_path('app/template/result/InitScript.html'));
+
+        /**/
         curl_setopt_array($curl, [
             CURLOPT_HTTPHEADER => self::getHeaders($cookie),
             CURLOPT_FOLLOWLOCATION => true,
@@ -83,12 +71,19 @@ class ScrapingController extends Controller
             CURLOPT_TIMEOUT => 30,
             CURLOPT_CONNECTTIMEOUT => 5,
             CURLOPT_ENCODING => '',
+
+            /*
+            CURLOPT_PROXY => $proxyHost, // Proxy host
+            CURLOPT_PROXYPORT => $proxyPort, // Proxy port
+            CURLOPT_PROXYUSERPWD => $proxyUser . ':' . $proxyPass, // Proxy authentication
+            */
+
             CURLOPT_BUFFERSIZE => 1024, // Reduce el tamaño del buffer de cURL
             CURLOPT_WRITEFUNCTION => function ($curl, $chunk) {
                 // Procesar cada fragmento del HTML
                 $parsedChunk = AmazonSearchParser::parse($chunk);
                 if ($parsedChunk) {
-                    echo "<div class='result'>{$parsedChunk}</div>";
+                    echo $parsedChunk;
                     echo "<!-- chunk -->"; // Ayuda a forzar el rendering
                     echo str_repeat(" ", 1024); // Padding;
                     //retraso en milisegundos
@@ -98,6 +93,7 @@ class ScrapingController extends Controller
                 return strlen($chunk);
             },
         ]);
+        /**/
 
         curl_exec($curl);
 
@@ -108,14 +104,14 @@ class ScrapingController extends Controller
         curl_close($curl);
 
         // Finalizar la página HTML
-        echo "</div></body></html>";
+        echo file_get_contents(storage_path('app/template/result/after.html'));
         flush(); // Asegurarse de enviar el contenido final
     }
 
 
 
 
-    private function getHeaders(): array
+    private function getHeaders($cookie): array
     {
         return [
             'Accept-Encoding: gzip, deflate, br',
@@ -123,6 +119,7 @@ class ScrapingController extends Controller
             'Accept: */*',
             'Content-Language: es-US',
             'User-Agent: ' . $this->getUserAgent(),
+            'Cookie: ' . $cookie,
         ];
     }
 

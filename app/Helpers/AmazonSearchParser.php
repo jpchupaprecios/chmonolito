@@ -39,8 +39,16 @@ class AmazonSearchParser
                 $price = self::getPrice();
                 $productId = self::getProductId();
                 $image = self::getImage();
+                $vendor = "amazon";
                 if($price && $image && $productId){
-                    return "<div>" .$productId.$image .  $title . $price . "</div>";
+                    $script = file_get_contents(storage_path('app/template/result/itemCardScript.html'));
+                    $script = str_replace('{{SKU}}', $productId, $script);
+                    $script = str_replace('{{VENDOR}}', $vendor, $script);
+                    $script = str_replace('{{TITLE}}', $title, $script);
+                    $script = str_replace('{{PRICE}}', $price, $script);
+                    $script = str_replace('{{IMAGE}}', $image, $script);
+
+                    return $script;
                 }
             }
 
@@ -52,6 +60,7 @@ class AmazonSearchParser
     {
         $asin = "";
         $xpath = new DOMXPath(self::$dom);
+
         $node = $xpath->query('//span[@data-csa-c-item-id]')->item(0);
         if($node){
             $asin = $node->getAttribute('data-csa-c-item-id');
@@ -66,7 +75,6 @@ class AmazonSearchParser
                 if(count($map2) > 1){
                     $asin = $map2[0];
                 }
-                $asin = "<a><a href='/product/".$asin."/amazon'>" . $asin . "</a></h1>";
             }
         }
         return $asin;
@@ -78,7 +86,7 @@ class AmazonSearchParser
         $mainImage = $xpath->query('.//img[contains(@class, "s-image")]')->item(0);
         $img = $mainImage ? (string) $mainImage->getAttribute('src') : '';
         if($img){
-            return "<img src='". $img ."'>";
+            return $img;
         }
 
         return "";

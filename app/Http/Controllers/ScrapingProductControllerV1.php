@@ -108,6 +108,48 @@ class ScrapingProductControllerV1 extends Controller
         // Añadir un padding para evitar buffering
         echo str_repeat(" ", 1024);
         flush();
+        $buffer = "";
+        $globalBuffer = "";
+        $config = [
+        "title" => [
+            "contains" => [
+                'productTitle'
+            ],
+            "status" => "pending"
+        ],
+        "price" => [
+            "contains" => [
+                'corePrice_feature_div'
+            ],
+            "status" => "pending"
+        ],
+        "image" => [
+            "contains" => [
+                'imgTagWrapperId'
+            ],
+            "status" => "pending"
+        ],
+        "variant" => [
+            "contains" => [
+                'twisterDimKeys'
+            ],
+            "status" => "pending"
+        ],
+        "variant_color" => [
+            "contains" => [
+                'variation_color_name'
+            ],
+            "status" => "pending"
+        ],
+    ];
+
+        //echo "1111<br>";
+        flush();
+
+        $proxyHost = env('OXYLABS_PROXY');
+        $proxyPort = env('OXULABS_PORT');
+        $proxyUser = env('OXYLABS_USER_US');
+        $proxyPass = env('OXYLABS_PASS');
 
         // Configurar cURL
         $curl = curl_init($url);
@@ -121,13 +163,18 @@ class ScrapingProductControllerV1 extends Controller
             CURLOPT_TIMEOUT => 30,
             CURLOPT_CONNECTTIMEOUT => 5,
             CURLOPT_ENCODING => '',
+
+            CURLOPT_PROXY => $proxyHost, // Proxy host
+            CURLOPT_PROXYPORT => $proxyPort, // Proxy port
+            CURLOPT_PROXYUSERPWD => $proxyUser . ':' . $proxyPass, // Proxy authentication
+
             CURLOPT_BUFFERSIZE => 1024, // Reduce el tamaño del buffer de cURL
-            CURLOPT_WRITEFUNCTION => function ($curl, $chunk) use ($productId, $try) {
+            CURLOPT_WRITEFUNCTION => function ($curl, $chunk) use ($productId, $try, $buffer, $config, $globalBuffer) {
                 // Procesar cada fragmento del HTML
 
 
 
-                $parsedChunk = AmazonProductParserV1::parse($chunk, $productId, $try);
+                $parsedChunk = AmazonProductParserV1::parse($chunk, $productId, $try, $buffer, $config, $globalBuffer);
                 if ($parsedChunk) {
                     echo "<div class='result'>{$parsedChunk}</div>";
                     echo "<!-- chunk -->"; // Ayuda a forzar el rendering
