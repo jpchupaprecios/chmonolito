@@ -10,11 +10,11 @@ class AdminLoginController extends Controller
     public function showAdminLoginForm()
     {
         // Por ejemplo: resources/views/admin/login.blade.php
-        return view('admin.login');
+        return view('administrador.login');
     }
 
     /**
-     * Procesa el login de admin.
+     * Procesa el login de administrador.
      */
     public function adminLogin(Request $request)
     {
@@ -32,19 +32,19 @@ class AdminLoginController extends Controller
             if (Auth::user()->is_admin) {
                 $request->session()->regenerate();
                 // Redirige al panel de admin
-                return redirect('/admin/dashboard')->with('success', 'Bienvenido al panel de administración.');
+                return redirect('/administrador/dashboard')->with('success', 'Bienvenido al panel de administración.');
             }
 
             // Si no es admin, cierra sesión y manda error
             Auth::logout();
-            return redirect('/admin/login')->withErrors([
+            return redirect('/administrador/login')->withErrors([
                 'email' => 'No tienes permisos de administrador.',
             ]);
         }
 
         // Si falla, volvemos con error
         return back()->withErrors([
-            'email' => 'Credenciales inválidas para admin.',
+            'email' => 'Credenciales inválidas para administrador.',
         ]);
     }
 }

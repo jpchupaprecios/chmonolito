@@ -80,8 +80,8 @@ Route::middleware([
 |  /admin/login GET -> muestra formulario
 |  /admin/login POST -> procesa login
 */
-Route::get('/admin/login', [AdminLoginController::class, 'showAdminLoginForm'])->name('admin.login');
-Route::post('/admin/login', [AdminLoginController::class, 'adminLogin'])->name('admin.login.perform');
+Route::get('/administrador/login', [AdminLoginController::class, 'showAdminLoginForm'])->name('administrador.login');
+Route::post('/administrador/login', [AdminLoginController::class, 'adminLogin'])->name('administrador.login.perform');
 
 /*
 |--------------------------------------------------------------------------
@@ -89,11 +89,15 @@ Route::post('/admin/login', [AdminLoginController::class, 'adminLogin'])->name('
 |--------------------------------------------------------------------------
 |  Protegemos todo lo que empiece con "/admin/" con tu middleware de Admin.
 */
-Route::prefix('admin')->middleware([
+Route::prefix('administrador')->middleware([
     //'auth:sanctum',
-    Admin::class, // Tu middleware que redirige a /admin/login si no es admin
+    Admin::class, // Tu middleware que redirige a /administrador/login si no es admin
 ])->group(function () {
+    Route::get('/', function () {
+        return redirect('/administrador/dashboard');
+    })->name('administrador.root');
+
     Route::get('/dashboard', function () {
-        return view('admin.dashboard');
-    })->name('admin.dashboard');
+        return view('administrador.dashboard');
+    })->name('administrador.dashboard');
 });

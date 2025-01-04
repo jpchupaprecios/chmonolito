@@ -1,5 +1,5 @@
 {{-- resources/views/admin/dashboard.blade.php --}}
-@extends('layouts.admin.app')
+@extends('layouts.administrador.app')
 
 @section('title', 'Dashboard')
 

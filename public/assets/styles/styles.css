@@ -266,3 +266,20 @@ body {
     --tw-text-opacity: 1;
     color: rgb(239 68 68 / var(--tw-text-opacity, 1));
 }
+
+.img-product{
+    max-height: 200px;
+}
+.product-wrapper{
+
+}
+.product-wrapper h3{
+    max-height: 200px;
+    min-height: 200px;
+}
+.img-wrapper{
+    height: 200px;
+    display: flex;            /* Activa Flexbox */
+    align-items: center;      /* Centra verticalmente */
+    justify-content: center;  /* Centra horizontalmente */
+}

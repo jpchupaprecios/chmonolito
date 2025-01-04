@@ -1,4 +1,4 @@
-@extends('layouts.admin.login')
+@extends('layouts.administrador.login')
 
 @section('content')
     <div class="flex min-h-screen items-center justify-center bg-gray-100">
@@ -31,7 +31,7 @@
                 <p class="mt-2 text-sm text-gray-600">Ingrese sus credenciales para acceder al dashboard</p>
             </div>
 
-            <form action="{{ route('admin.login.perform') }}" method="POST" class="space-y-4">
+            <form action="{{ route('administrador.login.perform') }}" method="POST" class="space-y-4">
                 @csrf
                 <div class="space-y-2">
                     <label for="admin_email" class="text-sm font-medium">Correo Electrónico</label>

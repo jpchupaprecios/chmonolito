@@ -40,20 +40,21 @@ class AmazonSearchParser
                 $productId = self::getProductId();
                 $image = self::getImage();
                 $vendor = "amazon";
-                if($price && $image && $productId){
-                    $script = file_get_contents(storage_path('app/template/result/itemCardScript.html'));
-                    $script = str_replace('{{SKU}}', $productId, $script);
-                    $script = str_replace('{{VENDOR}}', $vendor, $script);
-                    $script = str_replace('{{TITLE}}', $title, $script);
-                    $script = str_replace('{{PRICE}}', $price, $script);
-                    $script = str_replace('{{IMAGE}}', $image, $script);
-
-                    return $script;
+                if($price && $image){
+                    return [
+                        "product_id" => "123123123",
+                        "price" => $price,
+                        "image" => $image,
+                        "brand" => "",
+                        "title" => $title,
+                    ];
                 }
             }
 
-            return "";
+            return null;
         }
+
+        return null;
     }
 
     protected static function getProductId(): string
@@ -107,12 +108,12 @@ class AmazonSearchParser
         // Extrae el texto del título si está disponible
         if ($titleElement) {
             $title = trim($titleElement->textContent);
-            return "<div>" . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . "</div>";
+            return htmlspecialchars($title, ENT_QUOTES, 'UTF-8');
         }
 
         if ($titleElement2) {
             $title = trim($titleElement2->textContent);
-            return "<div>" . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . "</div>";
+            return htmlspecialchars($title, ENT_QUOTES, 'UTF-8');
         }
 
         return null;
@@ -142,7 +143,7 @@ class AmazonSearchParser
     private static function parsePrice(string $price): string
     {
         $price = str_replace(['US$', '$', 'US', ','], '', $price);
-        return "<div> $" . (float) $price . "</div>";
+        return (float) $price . "";
     }
 
     private static function repairHtml(string $html): string

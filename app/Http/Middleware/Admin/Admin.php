@@ -12,15 +12,15 @@ class Admin
     {
         // Verificar si NO está logueado
         if (! Auth::check()) {
-            // Redirigir a /admin/login
-            return redirect('/admin/login')
+            // Redirigir a /administrador/login
+            return redirect('/administrador/login')
                 ->with('error', 'Debes iniciar sesión como administrador.');
         }
 
         // Si está logueado pero NO es admin
         if (! Auth::user()->is_admin) {
             // Middleware/Admin.php
-            return redirect('/admin/login')
+            return redirect('/administrador/login')
                 ->with('error', 'No tienes privilegios de administrador.')
                 ->with('showLogoutLink', true);
         }
