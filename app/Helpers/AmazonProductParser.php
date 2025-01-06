@@ -177,7 +177,7 @@ class AmazonProductParser
         $mainImage = $xpath->query('//*[@id="imgTagWrapperId"]//img')->item(0);
         $img = $mainImage ? (string) $mainImage->getAttribute('src') : '';
         if($img){
-            return "<img src='". $img ."'>";
+            return $img;
         }
 
         if(!$img){
@@ -269,7 +269,7 @@ class AmazonProductParser
     private static function parsePrice(string $price): string
     {
         $price = str_replace(['US$', '$', 'US', ','], '', $price);
-        return "<div> $" . (float) $price . "</div>";
+        return (float) $price;
     }
 
     private static function repairHtml(string $html): string

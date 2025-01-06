@@ -8,12 +8,6 @@ class ResultController extends Controller
 {
     protected const COOKIE_PATH = 'app/';
 
-    public function performScraping()
-    {
-
-        // Muestra la vista con el formulario
-        return view('pages.result.index');
-    }
 
     private function showLayout(){
         $layoutStart = file_get_contents(resource_path('views/layouts/layoutStart.blade.php'));

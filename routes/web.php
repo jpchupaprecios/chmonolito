@@ -51,7 +51,7 @@ Route::post('/register', [RegisterController::class, 'store'])->name('register.p
 */
 Route::get('/', [HomeController::class, 'index']);
 Route::get('/results', [ResultController::class, 'index']);
-Route::get('/product/{id}', [ProductController::class, 'index']);
+Route::get('/product/{id}/{vendor}', [ProductController::class, 'index']);
 Route::get('/cart', [CartController::class, 'index']);
 Route::get('/checkout', [CheckoutController::class, 'index']);
 Route::get('/success', [CheckoutController::class, 'success']);
