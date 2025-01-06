@@ -36,8 +36,12 @@
         </div>
         <p class="text-xl font-bold mb-4 product-data-price"></p>
         <p class="mb-4 product-data-description"></p>
-        <!-- color-options -->
-        <!-- selects -->
+        <div id="color-options">
+
+        </div>
+        <div id="selects">
+
+        </div>
         <!-- quantity-controls -->
         <div class="flex items-center space-x-2">
             <button class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-[#d94551] text-white hover:bg-[#b01721] h-10 px-4 py-2 flex-grow">Añadir al Carrito</button>

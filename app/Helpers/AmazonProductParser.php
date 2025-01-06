@@ -303,7 +303,7 @@ class AmazonProductParser
 
     /* VARIANTS */
 
-    private static function parseVariants($currentAsin, $productId, $xpath, $color = false): string
+    private static function parseVariants($currentAsin, $productId, $xpath, $color = false): array
     {
         $variantNames = self::getVariantNames($xpath);
 
@@ -336,7 +336,7 @@ class AmazonProductParser
             }
         }
 
-        return self::formatVariants($variants, $productId, $color);
+        return $variants;//self::formatVariants($variants, $productId, $color);
     }
 
     private static function getVariantNames($xpath): array

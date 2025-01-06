@@ -67,9 +67,59 @@ class ProductController extends Controller
         return $layoutStart;
     }
 
+    private function showSelectVariant($layoutStart, $variant){
+        $variants = $variant["options"];
+        $title = $variant["title"];
+        $selectDiv = file_get_contents(resource_path('views/pages/details/components/selects2.blade.php'));
+        $select = '<option value="">Seleccionar</option>';
+        $li = '';
+
+        $selectDiv = str_replace('<!-- select_name -->', $title, $selectDiv);
+
+        foreach($variants as $variant){
+            $selected = ($variant["selected"]) ? "selected" : "";
+            $available = (!$variant["available"]) ? "disabled" : "";
+            $select .=
+                '<option '. $selected .' '. $available .' value="'.$variant["sku"].'">'.$variant["text"].'</option>';
+        }
+        $selectDiv = str_replace('<!-- options -->', $select, $selectDiv);
+
+
+
+        foreach($variants as $variant){
+            $li .=
+                '<li class="px-3 py-2 hover:bg-gray-100 cursor-pointer" data-size="'.$variant["sku"].'">'.$variant["text"].'</li>';
+        }
+        $selectDiv = str_replace('<!-- lis -->', $li, $selectDiv);
+
+
+        return $selectDiv;
+    }
+
+    private function showColorVariant($layoutStart, $variant){
+        $variants = $variant["options"];
+        $title = $variant["title"];
+
+        $colorsDiv = file_get_contents(resource_path('views/pages/details/components/color-options2.blade.php'));
+        $colors = "";
+        foreach($variants as $variant){
+
+            $selected = ($variant["selected"]) ? ' ring-blue-500 ring-2 ring-offset-2' : '';
+            $colors .=
+            "<img " .
+                'data-sku="'.$variant["sku"].'"'.
+                'class="color-button w-16 border-2 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 border-gray-300 '.$selected.'"'.
+                'src="'.$variant["img"].'" />"';
+        }
+
+        $colorsDiv = str_replace('<!-- color_variants -->', $colors, $colorsDiv);
+        return $colorsDiv;
+    }
+
     public function index(Request $request, $id, $vendor)
     {
 
+        //return view('pages.details.index');
         header('Content-Type: text/html; charset=UTF-8');
         header('Cache-Control: no-cache');
         header('X-Accel-Buffering: no');
@@ -145,7 +195,7 @@ class ProductController extends Controller
                 if ($parsedProducts && is_countable($parsedProducts) && count($parsedProducts) > 0) {
                     // Iteras sobre cada producto y renderizas la vista product.blade.php
                     if(key($parsedProducts) == "price"){
-// Extraer el valor
+                        // Extraer el valor
                         $price = $parsedProducts['price'];
 
                         // Mandar un script que actualice la clase .product-data-price
@@ -172,6 +222,108 @@ class ProductController extends Controller
                         echo "<script>
         document.querySelector('.product-data-rating').textContent = '" . addslashes($rating) . "';
     </script>";
+                    }elseif (key($parsedProducts) === "variant") {
+                        $variants = $parsedProducts['variant'];
+                        if ($variants) {
+                            // Generamos el HTML base con file_get_contents y str_replace
+                            $selectVariants = $this->showSelectVariant("", $variants[0]);
+
+                            // Convertimos todo el HTML en una cadena JSON válida
+                            $escapedHtml = json_encode($selectVariants);
+
+                            // Inyectamos en el DOM con un <script> usando la variable JS
+                            echo "<script>
+            var content = $escapedHtml;
+            document.querySelector('#selects').innerHTML = content;
+        </script>";
+
+                            echo '<script>const sizeSelectButton = document.getElementById("sizeSelectButton")
+    const sizeSelectLabel = document.getElementById("sizeSelectLabel")
+    const sizeOptions = document.getElementById("sizeOptions")
+    const hiddenSizeSelect = document.getElementById("hiddenSizeSelect")
+
+    // Mostrar/ocultar opciones
+    sizeSelectButton.addEventListener("click", () => {
+        sizeOptions.classList.toggle("hidden")
+    })
+
+    // Manejar la selección de una talla
+    sizeOptions.addEventListener("click", (e) => {
+        // Verificamos si se hizo click en un li con data-size
+        if (e.target.matches("li[data-size]")) {
+            const chosenSize = e.target.getAttribute("data-size")
+            // Actualizamos el texto del botón
+            sizeSelectLabel.textContent = chosenSize
+            // Actualizamos el select oculto
+            hiddenSizeSelect.value = chosenSize
+
+            // Cerramos el dropdown
+            sizeOptions.classList.add("hidden")
+        }
+    })
+
+    // (Opcional) Cerrar si se hace click fuera
+    document.addEventListener("click", (e) => {
+        if (
+            !sizeSelectButton.contains(e.target) &&
+            !sizeOptions.contains(e.target)
+        ) {
+            sizeOptions.classList.add("hidden")
+        }
+    })</script>';
+
+                        }
+                    }
+                    elseif (key($parsedProducts) == "variant_color") {
+                        $variants = $parsedProducts['variant_color'];
+                        if($variants){
+                            $selectVariants = $this->showColorVariant("", $variants[0]);
+
+// En lugar de addslashes():
+                            $escapedHtml = json_encode($selectVariants);
+
+// Luego tu script:
+                            echo "<script>
+    var content = $escapedHtml;
+    document.querySelector('#color-options').innerHTML = content;
+</script>";
+
+                            echo '<script>
+    // Tomamos todos los botones de color
+    const colorButtons = document.querySelectorAll(".color-button");
+    // Tomamos el input oculto (si lo usamos)
+    const hiddenColorInput = document.getElementById("colorInput");
+
+    // Función que marca un botón como seleccionado
+    function setSelectedColor(button) {
+        // 1. Quitamos el “anillo” (ring) de todos los botones
+        colorButtons.forEach((btn) => {
+            btn.classList.remove("ring-2", "ring-offset-2", "ring-blue-500");
+        });
+        // 2. Agregamos el anillo al botón clicado
+        button.classList.add("ring-2", "ring-offset-2", "ring-blue-500");
+
+        // 3. Actualizamos el valor del input oculto
+        if (hiddenColorInput) {
+            hiddenColorInput.value = button.dataset.color;
+        }
+    }
+
+    // Asignamos el evento click a cada botón
+    colorButtons.forEach((btn, index) => {
+        btn.addEventListener("click", () => {
+            setSelectedColor(btn);
+        });
+    });
+
+    // (Opcional) Seleccionar por defecto el primer color,
+    // o cualquier lógica inicial que quieras.
+    if (colorButtons.length > 0) {
+        setSelectedColor(colorButtons[0]);
+    }
+</script>
+';
+                        }
                     }
 
 
