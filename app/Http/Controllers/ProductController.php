@@ -109,7 +109,7 @@ class ProductController extends Controller
             "<img " .
                 'data-sku="'.$variant["sku"].'"'.
                 'class="color-button w-16 border-2 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 border-gray-300 '.$selected.'"'.
-                'src="'.$variant["img"].'" />"';
+                'src="'.$variant["img"].'" />';
         }
 
         $colorsDiv = str_replace('<!-- color_variants -->', $colors, $colorsDiv);

@@ -324,7 +324,11 @@ class AmazonProductParser
                 if (self::hasImages($variantBlock, $xpath)) {
                     $variantType = 'image';
                 }
+                //$h = self::$dom->saveHTML($variantBlock);
+                $lis = $xpath->query('//li', $variantBlock);
+                //foreach($lis as $li){
 
+                //}
                 $variantData = [
                     'name' => $name,
                     'type' => $variantType,
