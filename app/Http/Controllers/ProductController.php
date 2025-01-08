@@ -19,6 +19,7 @@ class ProductController extends Controller
         $layoutStart = $this->showCategories($layoutStart);
         $layoutStart = $this->showSearchWrapper($layoutStart);
         $layoutStart = $this->showFav($layoutStart);
+        $layoutStart = $this->showQuantityControls($layoutStart);
 
         return $layoutStart;
     }
@@ -42,6 +43,12 @@ class ProductController extends Controller
     private function showFav($layoutStart){
         $fav = file_get_contents(resource_path('views/pages/details/components/fav.blade.php'));
         $layoutStart = str_replace('<!-- fav -->', $fav, $layoutStart);
+        return $layoutStart;
+    }
+
+    private function showQuantityControls($layoutStart){
+        $fav = file_get_contents(resource_path('views/pages/details/components/quantity-controls.blade.php'));
+        $layoutStart = str_replace('<!-- quantity-controls -->', $fav, $layoutStart);
         return $layoutStart;
     }
 
@@ -76,6 +83,23 @@ class ProductController extends Controller
         $selectDiv = file_get_contents(resource_path('views/pages/details/components/selects2.blade.php'));
         $select = '<option value="">Seleccionar</option>';
         $li = '';
+
+        if(!$title){
+            $title = $variant["name"];
+            if($title){
+                $title = ucwords(str_replace('_', ' ', $title));
+
+                if($title == "Size Name"){
+                    $title = __("Tamaño");
+                }elseif($title == "Color Name"){
+                    $title = __("Color");
+                }elseif($title == "Service Provider"){
+                    $title = __("Proveedor");
+                }
+
+                $title = str_replace('Name', '', $title);
+            }
+        }
 
         $selectDiv = str_replace('<!-- select_name -->', $title, $selectDiv);
 
@@ -243,7 +267,7 @@ class ProductController extends Controller
 
                         // Mandar un script que actualice la clase .product-data-price
                         echo "<script>
-        document.querySelector('.product-data-price').textContent = '" . addslashes($price) . "';
+        document.querySelector('.product-data-price').textContent = '$ " . addslashes($price) . " MXN';
     </script>";
                     }elseif(key($parsedProducts) == "title"){
                         $title = $parsedProducts['title'];
