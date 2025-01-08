@@ -176,6 +176,8 @@ class ProductController extends Controller
         $global = "";
         $formVariants = "";
         $alreadyVariants = false;
+        $variantsForm = false;
+        $variantsDiv = false;
         /**/
         curl_setopt_array($curl, [
             CURLOPT_HTTPHEADER => self::getHeaders($cookie),
@@ -193,19 +195,38 @@ class ProductController extends Controller
             CURLOPT_PROXYUSERPWD => $proxyUser . ':' . $proxyPass, // Proxy authentication
 
             CURLOPT_BUFFERSIZE => 1024, // Reduce el tamaño del buffer de cURL
-            CURLOPT_WRITEFUNCTION => function ($curl, $chunk) use (&$buffer, &$datas, $id, &$global, &$formVariants, &$alreadyVariants) {
+            CURLOPT_WRITEFUNCTION => function ($curl, $chunk) use (&$buffer, &$datas, $id, &$global, &$formVariants, &$alreadyVariants, &$variantsForm, &$variantsDiv) {
                 // Supongamos que parse() retorna un array de productos
                 if(!$alreadyVariants){
-                    if(strpos($chunk, 'form id="twiste') !== false){
+
+                    if(strpos($chunk, 'twister-plus-inline-twister') !== false){
                         $formVariants .= $chunk;
+                        $variantsDiv = true;
+                    }
+
+                    if(strpos($chunk, 'form id="twiste') !== false || strpos($chunk, 'twister-plus-inline-twister') !== false){
+                        $formVariants .= $chunk;
+                        if(!$variantsDiv){
+                            $variantsForm = true;
+                        }
                     }elseif($formVariants){
                         $formVariants .= $chunk;
                     }
 
-                    if($formVariants && strpos($chunk, '</form') !== false){
-                        $formVariants .= $chunk;
-                        $this->parseVariants($id, $formVariants);
-                        $alreadyVariants = true;
+                    if($variantsDiv){
+                        if($formVariants && strpos($chunk, 'dp-cif aok-hidden') !== false){
+                            $formVariants .= $chunk;
+                            $this->parseVariants($id, $formVariants);
+                            $alreadyVariants = true;
+                        }
+                    }
+
+                    if($variantsForm){
+                        if($formVariants && strpos($chunk, '</form') !== false){
+                            $formVariants .= $chunk;
+                            $this->parseVariants($id, $formVariants);
+                            $alreadyVariants = true;
+                        }
                     }
                 }
 
@@ -388,6 +409,20 @@ class ProductController extends Controller
         $variantsParser = new ChapiAmazonVariantsParser($this->xpath);
         $variants = $variantsParser->parse($id, (int)$id, $dom);
 
+        $uniqueVariants = [];
+        $alreadySeenNames = [];
+
+        foreach ($variants as $variant) {
+            $name = $variant['name'];
+
+            if (!in_array($name, $alreadySeenNames)) {
+                $uniqueVariants[] = $variant;
+                $alreadySeenNames[] = $name;
+            }
+        }
+
+        $variants = $uniqueVariants;
+
         foreach($variants as $variant){
             if($variant && $variant["type"] == "image"){
                 $selectVariants = $this->showColorVariant("", $variant);
@@ -398,8 +433,14 @@ class ProductController extends Controller
 // Luego tu script:
                 echo "<script>
     var content = $escapedHtml;
-    document.querySelector('#color-options').innerHTML = content;
+    var container = document.querySelector('#color-options');
+
+    if (container) {
+        // Agrega (append) al final del contenedor
+        container.insertAdjacentHTML('beforeend', content);
+    }
 </script>";
+
 
                 echo '<script>
     // Tomamos todos los botones de color
@@ -442,11 +483,14 @@ class ProductController extends Controller
                 // Convertimos todo el HTML en una cadena JSON válida
                 $escapedHtml = json_encode($selectVariants);
 
-                // Inyectamos en el DOM con un <script> usando la variable JS
                 echo "<script>
-            var content = $escapedHtml;
-            document.querySelector('#selects').innerHTML = content;
-        </script>";
+    var content = $escapedHtml;
+    var container = document.querySelector('#selects');
+
+    if (container) {
+        container.insertAdjacentHTML('beforeend', content);
+    }
+</script>";
 
                 echo '<script>const sizeSelectButton = document.getElementById("sizeSelectButton")
     const sizeSelectLabel = document.getElementById("sizeSelectLabel")
