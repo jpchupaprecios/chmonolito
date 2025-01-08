@@ -5,14 +5,14 @@
 
         <!-- BOTÓN que se ve siempre -->
         <button
-            id="sizeSelectButton"
+            id="sizeSelectButton-{{ select_name }}"
             type="button"
             class="flex h-10 w-full items-center justify-between
              rounded-md border border-input bg-background px-3 py-2 text-sm
              ring-offset-background focus:outline-none focus:ring-2
              focus:ring-ring focus:ring-offset-2"
         >
-            <span id="sizeSelectLabel">Seleccionar</span>
+            <span id="sizeSelectLabel-{{ select_name }}">Seleccionar</span>
             <svg xmlns="http://www.w3.org/2000/svg"
                  width="24" height="24"
                  viewBox="0 0 24 24"
@@ -27,7 +27,7 @@
 
         <!-- LISTA DESPLEGABLE con las tallas -->
         <div
-            id="sizeOptions"
+            id="sizeOptions-{{ select_name }}"
             class="hidden absolute z-50 w-full bg-white border border-gray-200
              rounded shadow-md mt-1"
         >
@@ -43,7 +43,7 @@
 
         <!-- SELECT REAL (OCULTO) PARA EL FORMULARIO -->
         <select
-            id="hiddenSizeSelect"
+            id="hiddenSizeSelect-{{ select_name }}"
             name="size"
             class="hidden"
         >

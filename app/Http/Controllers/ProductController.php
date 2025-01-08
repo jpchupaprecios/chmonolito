@@ -232,7 +232,6 @@ class ProductController extends Controller
                     }
                 }
 
-
                 $global .= $chunk;
                 $parsedProducts = AmazonProductParser::processHtmlChunks($chunk, $buffer, $datas, $id);
 
@@ -483,7 +482,9 @@ class ProductController extends Controller
                 $selectVariants = $this->showSelectVariant("", $variant);
 
                 // Convertimos todo el HTML en una cadena JSON válida
+                $selectVariants = str_replace('{{ select_name }}', $variant["name"], $selectVariants);
                 $escapedHtml = json_encode($selectVariants);
+
 
                 echo "<script>
     var content = $escapedHtml;
@@ -494,10 +495,10 @@ class ProductController extends Controller
     }
 </script>";
 
-                echo '<script>const sizeSelectButton = document.getElementById("sizeSelectButton")
-    const sizeSelectLabel = document.getElementById("sizeSelectLabel")
-    const sizeOptions = document.getElementById("sizeOptions")
-    const hiddenSizeSelect = document.getElementById("hiddenSizeSelect")
+                echo '<script>const sizeSelectButton = document.getElementById("sizeSelectButton-'.$variant["name"].'")
+    const sizeSelectLabel = document.getElementById("sizeSelectLabel-'.$variant["name"].'")
+    const sizeOptions = document.getElementById("sizeOptions-'.$variant["name"].'")
+    const hiddenSizeSelect = document.getElementById("hiddenSizeSelect-'.$variant["name"].'")
 
     // Mostrar/ocultar opciones
     sizeSelectButton.addEventListener("click", () => {
