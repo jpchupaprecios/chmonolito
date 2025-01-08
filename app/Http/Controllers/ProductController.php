@@ -424,7 +424,9 @@ class ProductController extends Controller
 
         $variants = $uniqueVariants;
 
+        $itera = 0;
         foreach($variants as $variant){
+            $itera++;
             if($variant && $variant["type"] == "image"){
                 $selectVariants = $this->showColorVariant("", $variant);
 
@@ -495,38 +497,38 @@ class ProductController extends Controller
     }
 </script>";
 
-                echo '<script>const sizeSelectButton = document.getElementById("sizeSelectButton-'.$variant["name"].'")
-    const sizeSelectLabel = document.getElementById("sizeSelectLabel-'.$variant["name"].'")
-    const sizeOptions = document.getElementById("sizeOptions-'.$variant["name"].'")
-    const hiddenSizeSelect = document.getElementById("hiddenSizeSelect-'.$variant["name"].'")
+                echo '<script>const sizeSelectButton'.$itera.' = document.getElementById("sizeSelectButton-'.$variant["name"].'")
+    const sizeSelectLabel'.$itera.' = document.getElementById("sizeSelectLabel-'.$variant["name"].'")
+    const sizeOptions'.$itera.' = document.getElementById("sizeOptions-'.$variant["name"].'")
+    const hiddenSizeSelect'.$itera.' = document.getElementById("hiddenSizeSelect-'.$variant["name"].'")
 
     // Mostrar/ocultar opciones
-    sizeSelectButton.addEventListener("click", () => {
-        sizeOptions.classList.toggle("hidden")
+    sizeSelectButton'.$itera.'.addEventListener("click", () => {
+        sizeOptions'.$itera.'.classList.toggle("hidden")
     })
 
     // Manejar la selección de una talla
-    sizeOptions.addEventListener("click", (e) => {
+    sizeOptions'.$itera.'.addEventListener("click", (e) => {
         // Verificamos si se hizo click en un li con data-size
         if (e.target.matches("li[data-size]")) {
             const chosenSize = e.target.getAttribute("data-size")
             // Actualizamos el texto del botón
-            sizeSelectLabel.textContent = chosenSize
+            sizeSelectLabel'.$itera.'.textContent = chosenSize
             // Actualizamos el select oculto
-            hiddenSizeSelect.value = chosenSize
+            hiddenSizeSelect'.$itera.'.value = chosenSize
 
             // Cerramos el dropdown
-            sizeOptions.classList.add("hidden")
+            sizeOptions'.$itera.'.classList.add("hidden")
         }
     })
 
     // (Opcional) Cerrar si se hace click fuera
     document.addEventListener("click", (e) => {
         if (
-            !sizeSelectButton.contains(e.target) &&
-            !sizeOptions.contains(e.target)
+            !sizeSelectButton'.$itera.'.contains(e.target) &&
+            !sizeOptions'.$itera.'.contains(e.target)
         ) {
-            sizeOptions.classList.add("hidden")
+            sizeOptions'.$itera.'.classList.add("hidden")
         }
     })</script>';
             }
