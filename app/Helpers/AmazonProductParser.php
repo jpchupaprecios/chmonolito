@@ -108,18 +108,6 @@ class AmazonProductParser
                 case "image":
                     $content = self::getImage();
                     break;
-                case "variant_color":
-                    $currentAsin = $productId;
-                    $productIdTmp = "1";
-                    $xpath = new DOMXPath(self::$dom);
-                    $content = self::parseVariants($currentAsin, $productIdTmp, $xpath);
-                    break;
-                case "variant":
-                    $currentAsin = $productId;
-                    $productIdTmp = "1";
-                    $xpath = new DOMXPath(self::$dom);
-                    $content = self::parseVariants($currentAsin, $productIdTmp, $xpath);
-                    break;
                 default:
                     /*$xpaths = is_array($elementConfig['xpath']) ? $elementConfig['xpath'] : [$elementConfig['xpath']];
                     $xpath = new DOMXPath($dom);

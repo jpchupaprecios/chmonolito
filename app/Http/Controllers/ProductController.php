@@ -3,8 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\AmazonProductParser;
+use App\Parsers\Chapi\Amazon\Product\Variants\ChapiAmazonVariantsParser;
 use Illuminate\Http\Request;
 use App\Helpers\AmazonSearchParser;
+use DOMDocument;
+use DOMXPath;
 class ProductController extends Controller
 {
     protected const COOKIE_PATH = 'app/';
@@ -170,6 +173,9 @@ class ProductController extends Controller
             ],
         ];
 
+        $global = "";
+        $formVariants = "";
+        $alreadyVariants = false;
         /**/
         curl_setopt_array($curl, [
             CURLOPT_HTTPHEADER => self::getHeaders($cookie),
@@ -187,9 +193,24 @@ class ProductController extends Controller
             CURLOPT_PROXYUSERPWD => $proxyUser . ':' . $proxyPass, // Proxy authentication
 
             CURLOPT_BUFFERSIZE => 1024, // Reduce el tamaño del buffer de cURL
-            CURLOPT_WRITEFUNCTION => function ($curl, $chunk) use (&$buffer, &$datas, $id) {
+            CURLOPT_WRITEFUNCTION => function ($curl, $chunk) use (&$buffer, &$datas, $id, &$global, &$formVariants, &$alreadyVariants) {
                 // Supongamos que parse() retorna un array de productos
+                if(!$alreadyVariants){
+                    if(strpos($chunk, 'form id="twiste') !== false){
+                        $formVariants .= $chunk;
+                    }elseif($formVariants){
+                        $formVariants .= $chunk;
+                    }
 
+                    if($formVariants && strpos($chunk, '</form') !== false){
+                        $formVariants .= $chunk;
+                        $this->parseVariants($id, $formVariants);
+                        $alreadyVariants = true;
+                    }
+                }
+
+
+                $global .= $chunk;
                 $parsedProducts = AmazonProductParser::processHtmlChunks($chunk, $buffer, $datas, $id);
 
                 if ($parsedProducts && is_countable($parsedProducts) && count($parsedProducts) > 0) {
@@ -226,7 +247,7 @@ class ProductController extends Controller
                         $variants = $parsedProducts['variant'];
                         if ($variants) {
                             // Generamos el HTML base con file_get_contents y str_replace
-                            $selectVariants = $this->showSelectVariant("", $variants[0]);
+                            /*$selectVariants = $this->showSelectVariant("", $variants[0]);
 
                             // Convertimos todo el HTML en una cadena JSON válida
                             $escapedHtml = json_encode($selectVariants);
@@ -270,14 +291,14 @@ class ProductController extends Controller
         ) {
             sizeOptions.classList.add("hidden")
         }
-    })</script>';
+    })</script>';*/
 
                         }
                     }
                     elseif (key($parsedProducts) == "variant_color") {
                         $variants = $parsedProducts['variant_color'];
                         if($variants){
-                            $selectVariants = $this->showColorVariant("", $variants[0]);
+                            /*$selectVariants = $this->showColorVariant("", $variants[0]);
 
 // En lugar de addslashes():
                             $escapedHtml = json_encode($selectVariants);
@@ -322,7 +343,7 @@ class ProductController extends Controller
         setSelectedColor(colorButtons[0]);
     }
 </script>
-';
+';*/
                         }
                     }
 
@@ -347,6 +368,9 @@ class ProductController extends Controller
             echo "<p>Error: " . curl_error($curl) . "</p>";
         }
 
+        if(!$formVariants){
+            $a = 1;
+        }
         curl_close($curl);
 
         // Finalizar la página HTML
@@ -357,7 +381,110 @@ class ProductController extends Controller
         flush(); // Asegurarse de enviar el contenido final
     }
 
+    private function parseVariants($id, $html){
+        $dom = new DOMDocument();
+        $dom->loadHTML($html);
+        $this->xpath = new DOMXPath($dom);
+        $variantsParser = new ChapiAmazonVariantsParser($this->xpath);
+        $variants = $variantsParser->parse($id, (int)$id, $dom);
 
+        foreach($variants as $variant){
+            if($variant && $variant["type"] == "image"){
+                $selectVariants = $this->showColorVariant("", $variant);
+
+// En lugar de addslashes():
+                $escapedHtml = json_encode($selectVariants);
+
+// Luego tu script:
+                echo "<script>
+    var content = $escapedHtml;
+    document.querySelector('#color-options').innerHTML = content;
+</script>";
+
+                echo '<script>
+    // Tomamos todos los botones de color
+    const colorButtons = document.querySelectorAll(".color-button");
+    // Tomamos el input oculto (si lo usamos)
+    const hiddenColorInput = document.getElementById("colorInput");
+
+    // Función que marca un botón como seleccionado
+    function setSelectedColor(button) {
+        // 1. Quitamos el “anillo” (ring) de todos los botones
+        colorButtons.forEach((btn) => {
+            btn.classList.remove("ring-2", "ring-offset-2", "ring-blue-500");
+        });
+        // 2. Agregamos el anillo al botón clicado
+        button.classList.add("ring-2", "ring-offset-2", "ring-blue-500");
+
+        // 3. Actualizamos el valor del input oculto
+        if (hiddenColorInput) {
+            hiddenColorInput.value = button.dataset.color;
+        }
+    }
+
+    // Asignamos el evento click a cada botón
+    colorButtons.forEach((btn, index) => {
+        btn.addEventListener("click", () => {
+            setSelectedColor(btn);
+        });
+    });
+
+    // (Opcional) Seleccionar por defecto el primer color,
+    // o cualquier lógica inicial que quieras.
+    if (colorButtons.length > 0) {
+        setSelectedColor(colorButtons[0]);
+    }
+</script>
+';
+            }else{
+                $selectVariants = $this->showSelectVariant("", $variant);
+
+                // Convertimos todo el HTML en una cadena JSON válida
+                $escapedHtml = json_encode($selectVariants);
+
+                // Inyectamos en el DOM con un <script> usando la variable JS
+                echo "<script>
+            var content = $escapedHtml;
+            document.querySelector('#selects').innerHTML = content;
+        </script>";
+
+                echo '<script>const sizeSelectButton = document.getElementById("sizeSelectButton")
+    const sizeSelectLabel = document.getElementById("sizeSelectLabel")
+    const sizeOptions = document.getElementById("sizeOptions")
+    const hiddenSizeSelect = document.getElementById("hiddenSizeSelect")
+
+    // Mostrar/ocultar opciones
+    sizeSelectButton.addEventListener("click", () => {
+        sizeOptions.classList.toggle("hidden")
+    })
+
+    // Manejar la selección de una talla
+    sizeOptions.addEventListener("click", (e) => {
+        // Verificamos si se hizo click en un li con data-size
+        if (e.target.matches("li[data-size]")) {
+            const chosenSize = e.target.getAttribute("data-size")
+            // Actualizamos el texto del botón
+            sizeSelectLabel.textContent = chosenSize
+            // Actualizamos el select oculto
+            hiddenSizeSelect.value = chosenSize
+
+            // Cerramos el dropdown
+            sizeOptions.classList.add("hidden")
+        }
+    })
+
+    // (Opcional) Cerrar si se hace click fuera
+    document.addEventListener("click", (e) => {
+        if (
+            !sizeSelectButton.contains(e.target) &&
+            !sizeOptions.contains(e.target)
+        ) {
+            sizeOptions.classList.add("hidden")
+        }
+    })</script>';
+            }
+        }
+    }
 
     private function getHeaders($cookie): array
     {
@@ -396,5 +523,30 @@ class ProductController extends Controller
         $randomChromeVersion = mt_rand(85, 87) . '.0.' . (mt_rand(4100, 4290)) . '.' . (mt_rand(140, 189));
 
         return "Mozilla/5.0 ($randomOs) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/$randomChromeVersion Safari/537.36";
+    }
+
+    private static function repairHtml(string $html): string
+    {
+        // Usa tidy si está disponible
+        if (extension_loaded('tidy')) {
+            $config = [
+                'indent' => true,
+                'output-xhtml' => true,
+                'wrap' => 200,
+                'input-encoding' => 'utf8',
+                'output-encoding' => 'utf8',
+                'char-encoding' => 'utf8',
+            ];
+            $tidy = new tidy();
+            $cleanHtml = $tidy->repairString($html, $config, 'utf8');
+            return $cleanHtml;
+        }
+
+        // Fallback: Agregar etiquetas básicas si tidy no está disponible
+        if (stripos($html, '<html') === false) {
+            $html = "<html><body>{$html}</body></html>";
+        }
+
+        return $html;
     }
 }

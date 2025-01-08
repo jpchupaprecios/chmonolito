@@ -7,6 +7,7 @@ namespace App\Parsers\Chapi\Amazon\Product\Variants;
 use App\Models\Product\Variant;
 use App\Models\Product\VariantOption;
 use DOMXPath;
+use DOMDocument;
 
 final class ChapiAmazonVariantsParser
 {
@@ -17,7 +18,7 @@ final class ChapiAmazonVariantsParser
 		$this->xpath = $xpath;
 	}
 
-	public function parse(string $currentAsin, int $productId): array
+	public function parse(string $currentAsin, int $productId, $dom): array
 	{
 		$variantNames = $this->getVariantNames();
 
@@ -27,9 +28,15 @@ final class ChapiAmazonVariantsParser
 			$variantNames = $matchingDivs;
 		}
 
+
 		$variants = [];
 		foreach ($variantNames as $name) {
 			$variantBlock = $this->getVariantBlock($name);
+
+            if($variantBlock === null){
+                $videoHtml = $dom->saveHTML();
+            }
+
 			$variantType = 'default';
 			$title = '';
 
@@ -50,7 +57,7 @@ final class ChapiAmazonVariantsParser
 			}
 		}
 
-		return $this->formatVariants($variants, $productId);
+        return $variants;
 	}
 
 	private function getVariantNames(): array
@@ -176,34 +183,33 @@ final class ChapiAmazonVariantsParser
 	{
 		$result = [];
 
+        $variantId = 1;
 		foreach ($variants as $variantResult) {
-			$variantsGroup = new Variant();
-            $variantsGroup->setAttribute('product_details_id', $productId);
+			$variantsGroup = new \stdClass();
+            $variantsGroup->product_details_id = $productId;
 			$type = $variantResult['type'] === 'image' ? 'color' : 'default';
-			$variantsGroup->setAttribute('type', $type);
-			$variantsGroup->setAttribute('title', $variantResult['title']);
-            $variantsGroup->save();
-
+			$variantsGroup->type = $type;
+			$variantsGroup->title = $variantResult['title'];
+            $variantsGroup->id = $variantId;
+            $variantId++;
 			$variantObjs = [];
 			foreach ($variantResult['options'] as $variant) {
 				if (is_array($variant)) {
 					if (trim(strtolower($variant['text'])) === 'seleccionar' || trim(strtolower($variant['text'])) === 'select') {
 						continue;
 					}
-					$variantObj = new VariantOption();
-					$variantObj->setAttribute('title', utf8_encode($variant['text']));
-					$variantObj->setAttribute('product_id', $variant['sku']);
-					$variantObj->setAttribute('image', $variant['img']);
-                    $variantObj->setAttribute('selected', $variant['selected']);
-                    $variantObj->setAttribute('variant_id', $variantsGroup->id);
-					$variantObj->setAttribute('available', $variant['available']);
+					$variantObj = new \stdClass();
+					$variantObj->title = utf8_encode($variant['text']);
+					$variantObj->product_id = $variant['sku'];
+					$variantObj->image = $variant['img'];
+                    $variantObj->selected = $variant['selected'];
+                    $variantObj->variant_id = $variantsGroup->id;
+					$variantObj->available = $variant['available'];
 					$variantObjs[] = $variantObj;
 				}
 			}
 
 			if (!empty($variantObjs)) {
-				$variantsGroup->setRelation('options', $variantObjs);
-                $variantsGroup->options()->saveMany($variantObjs);
 				$result[] = $variantsGroup;
 			}
 		}
