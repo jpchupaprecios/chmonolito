@@ -21,13 +21,18 @@ final class ChapiAmazonVariantsParser
 	public function parse(string $currentAsin, int $productId, $dom): array
 	{
 		$variantNames = $this->getVariantNames();
-
+        //$dom->saveHTML();
 		$matchingDivs = $this->getMatchingDivs();
 
 		if (empty($variantNames)) {
 			$variantNames = $matchingDivs;
 		}
 
+        $tmpvariantNames = [];
+
+        if($variantNames && is_array($variantNames)){
+            $variantNames = array_unique($variantNames);
+        }
 
 		$variants = [];
 		foreach ($variantNames as $name) {
@@ -39,6 +44,7 @@ final class ChapiAmazonVariantsParser
 
 			$variantType = 'default';
 			$title = '';
+            //$dom->saveHTML($variantBlock);
 
 			if ($variantBlock) {
 				$title = $this->getVariantTitle($variantBlock);
@@ -88,6 +94,7 @@ final class ChapiAmazonVariantsParser
 		if (!$variantBlock) {
 			$variantBlock = $this->xpath->query("//div[@id='inline-twister-row-$name']")->item(0);
 		}
+
 		return $variantBlock;
 	}
 

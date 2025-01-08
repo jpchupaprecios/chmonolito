@@ -199,18 +199,18 @@ class ProductController extends Controller
                 // Supongamos que parse() retorna un array de productos
                 if(!$alreadyVariants){
 
+                    if($formVariants) {
+                        $formVariants .= $chunk;
+                    }
+
                     if(strpos($chunk, 'twister-plus-inline-twister') !== false){
                         $formVariants .= $chunk;
                         $variantsDiv = true;
                     }
 
-                    if(strpos($chunk, 'form id="twiste') !== false || strpos($chunk, 'twister-plus-inline-twister') !== false){
+                    if(strpos($chunk, 'form id="twiste') !== false){
                         $formVariants .= $chunk;
-                        if(!$variantsDiv){
-                            $variantsForm = true;
-                        }
-                    }elseif($formVariants){
-                        $formVariants .= $chunk;
+                        $variantsForm = true;
                     }
 
                     if($variantsDiv){
@@ -218,6 +218,7 @@ class ProductController extends Controller
                             $formVariants .= $chunk;
                             $this->parseVariants($id, $formVariants);
                             $alreadyVariants = true;
+                            $formVariants = "";
                         }
                     }
 
@@ -226,6 +227,7 @@ class ProductController extends Controller
                             $formVariants .= $chunk;
                             $this->parseVariants($id, $formVariants);
                             $alreadyVariants = true;
+                            $formVariants = "";
                         }
                     }
                 }
