@@ -30,16 +30,6 @@ class AmazonProductParser
                 'imgTagWrapperId'
             ],
         ],
-        "variant" => [
-            "contains" => [
-                'twisterDimKeys'
-            ],
-        ],
-        "variant_color" => [
-            "contains" => [
-                'variation_color_name'
-            ],
-        ],
     ];
 
     private static function initHtmlDom($html)

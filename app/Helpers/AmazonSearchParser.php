@@ -40,9 +40,9 @@ class AmazonSearchParser
                 $productId = self::getProductId();
                 $image = self::getImage();
                 $vendor = "amazon";
-                if($price && $image){
+                if($price && $image && $productId){
                     return [
-                        "product_id" => "123123123",
+                        "product_id" => $productId,
                         "price" => $price,
                         "image" => $image,
                         "brand" => "",

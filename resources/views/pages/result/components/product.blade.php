@@ -15,7 +15,7 @@
         <p class="text-gray-600 mb-2">${{ $productData['price'] ?? '0.00' }}</p>
         <p class="text-gray-600 mb-2">{{ $productData['brand'] ?? 'Desconocida' }}</p>
         <!-- Calificación, Botón "Ver más", etc. -->
-        <a href="{{ url('product/' . ($productData['product_id'] ?? 1)) }}">
+        <a href="{{ url('product/' . ($productData['product_id'] . '/amazon' ?? 1)) }}">
             <button class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2 w-full bg-[#d94551] hover:bg-[#b01721] text-white">
                 Ver más
             </button>

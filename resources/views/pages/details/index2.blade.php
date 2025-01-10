@@ -1,5 +1,6 @@
+<!-- breadcrumb -->
 <div class="grid md:grid-cols-2 gap-8">
-    <div>
+    <!--<div>
         <div class="relative aspect-square mb-4">
             <img
                 class="product-data-image rounded-lg"
@@ -13,6 +14,27 @@
             <div class="relative w-20 h-20"><img alt="Camiseta Premium thumbnail 2" loading="lazy" decoding="async" data-nimg="fill" class="rounded-md" src="https://dummyimage.com/100x100/000/fff&text=Thumbnail%202" style="position: absolute; height: 100%; width: 100%; inset: 0px; object-fit: cover; color: transparent;"></div>
             <div class="relative w-20 h-20"><img alt="Camiseta Premium thumbnail 3" loading="lazy" decoding="async" data-nimg="fill" class="rounded-md" src="https://dummyimage.com/100x100/000/fff&text=Thumbnail%203" style="position: absolute; height: 100%; width: 100%; inset: 0px; object-fit: cover; color: transparent;"></div>
         </div>
+    </div>-->
+    <div>
+        <div style="width: 550px; height: 550px; position: relative;">
+
+            <!-- Imagen principal -->
+            <img
+                class="product-data-image rounded-lg"
+                alt="Imagen principal"
+                loading="lazy" decoding="async"
+                data-nimg="fill"
+                src=""
+                style="position: absolute; height: 100%; width: 100%; inset: 0px; object-fit: cover; color: transparent;"
+            >
+        </div>
+
+        <!-- Thumbnails -->
+        <div id="thumbnails-wrapper" class="relative w-20 h-20">
+
+
+        </div>
+
     </div>
     <div>
         <h1 class="text-3xl font-bold mb-2 product-data-title"></h1>
@@ -51,3 +73,28 @@
     </div>
 </div>
 <!-- extra-data-tabs -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Selecciona la imagen principal
+        const mainImage = document.querySelector('.product-data-image');
+
+        // Selecciona todos los thumbs (cada <img> con clase .thumb-img)
+        const thumbImages = document.querySelectorAll('.thumb-img');
+
+        // Recorremos cada thumbnail y escuchamos el click
+        thumbImages.forEach(thumb => {
+            thumb.addEventListener('click', () => {
+                // Cambiamos la imagen principal al src del thumb
+                mainImage.src = thumb.src;
+
+                // (Opcional) cambiar alt, o más datos
+                mainImage.alt = thumb.alt;
+
+                // (Opcional) si deseas indicar cuál está seleccionado,
+                // podrías añadirle una clase .active al thumb seleccionado:
+                thumbImages.forEach(img => img.classList.remove('ring-2', 'ring-offset-2', 'ring-blue-500'));
+                thumb.classList.add('ring-2', 'ring-offset-2', 'ring-blue-500');
+            });
+        });
+    });
+</script>

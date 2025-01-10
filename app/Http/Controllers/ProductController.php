@@ -19,6 +19,7 @@ class ProductController extends Controller
         $layoutStart = $this->showCategories($layoutStart);
         $layoutStart = $this->showSearchWrapper($layoutStart);
         $layoutStart = $this->showFav($layoutStart);
+        $layoutStart = $this->showBreadcrumb($layoutStart);
         $layoutStart = $this->showQuantityControls($layoutStart);
 
         return $layoutStart;
@@ -43,6 +44,12 @@ class ProductController extends Controller
     private function showFav($layoutStart){
         $fav = file_get_contents(resource_path('views/pages/details/components/fav.blade.php'));
         $layoutStart = str_replace('<!-- fav -->', $fav, $layoutStart);
+        return $layoutStart;
+    }
+
+    private function showBreadcrumb($layoutStart){
+        $breadcrumb = file_get_contents(resource_path('views/pages/details/components/breadcrumb.blade.php'));
+        $layoutStart = str_replace('<!-- breadcrumb -->', $breadcrumb, $layoutStart);
         return $layoutStart;
     }
 
@@ -187,6 +194,10 @@ class ProductController extends Controller
                 "status" => "pending",
                 "content" => ""
             ],
+            "thumbs" => [
+                "status" => "pending",
+                "content" => ""
+            ],
             "variant" => [
                 "status" => "pending",
                 "content" => ""
@@ -202,6 +213,8 @@ class ProductController extends Controller
         $alreadyVariants = false;
         $variantsForm = false;
         $variantsDiv = false;
+        $thumbsChunks = "";
+        $imagesThumb = null;
         /**/
         curl_setopt_array($curl, [
             CURLOPT_HTTPHEADER => self::getHeaders($cookie),
@@ -219,8 +232,39 @@ class ProductController extends Controller
             CURLOPT_PROXYUSERPWD => $proxyUser . ':' . $proxyPass, // Proxy authentication
 
             CURLOPT_BUFFERSIZE => 1024, // Reduce el tamaño del buffer de cURL
-            CURLOPT_WRITEFUNCTION => function ($curl, $chunk) use (&$buffer, &$datas, $id, &$global, &$formVariants, &$alreadyVariants, &$variantsForm, &$variantsDiv) {
+            CURLOPT_WRITEFUNCTION => function ($curl, $chunk) use (&$buffer, &$datas, $id, &$global, &$formVariants, &$alreadyVariants, &$variantsForm, &$variantsDiv, &$thumbsChunks, &$imagesThumb) {
                 // Supongamos que parse() retorna un array de productos
+                if(!$imagesThumb && strpos($chunk, '[{"hiRes') !== false){
+                    $thumbsChunks.= $chunk;
+                    $imagesThumb = self::getImages($thumbsChunks);
+                    $html = "";
+                    if($imagesThumb){
+                        $html .= '<div class="flex space-x-2 thumbnails">';
+                        foreach($imagesThumb as $image) {
+                            $html .= '
+                <img
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    data-nimg="fill"
+                    class="rounded-md thumb-img"
+                    src="'.$image.'"
+                    style="position: absolute; height: 100%; width: 100%; inset: 0px; object-fit: cover; color: transparent;"
+                >
+            </div>';
+                        }
+                        $escapedHtml = json_encode($html);
+                         echo "<script>
+    var content = $escapedHtml;
+    var container = document.querySelector('#thumbnails-wrapper');
+
+    if (container) {
+        // Agrega (append) al final del contenedor
+        container.insertAdjacentHTML('beforeend', content);
+    }
+</script>";
+                    }
+                }
                 if(!$alreadyVariants){
 
                     if($formVariants) {
@@ -289,110 +333,7 @@ class ProductController extends Controller
                         echo "<script>
         document.querySelector('.product-data-rating').textContent = '" . addslashes($rating) . "';
     </script>";
-                    }elseif (key($parsedProducts) === "variant") {
-                        $variants = $parsedProducts['variant'];
-                        if ($variants) {
-                            // Generamos el HTML base con file_get_contents y str_replace
-                            /*$selectVariants = $this->showSelectVariant("", $variants[0]);
-
-                            // Convertimos todo el HTML en una cadena JSON válida
-                            $escapedHtml = json_encode($selectVariants);
-
-                            // Inyectamos en el DOM con un <script> usando la variable JS
-                            echo "<script>
-            var content = $escapedHtml;
-            document.querySelector('#selects').innerHTML = content;
-        </script>";
-
-                            echo '<script>const sizeSelectButton = document.getElementById("sizeSelectButton")
-    const sizeSelectLabel = document.getElementById("sizeSelectLabel")
-    const sizeOptions = document.getElementById("sizeOptions")
-    const hiddenSizeSelect = document.getElementById("hiddenSizeSelect")
-
-    // Mostrar/ocultar opciones
-    sizeSelectButton.addEventListener("click", () => {
-        sizeOptions.classList.toggle("hidden")
-    })
-
-    // Manejar la selección de una talla
-    sizeOptions.addEventListener("click", (e) => {
-        // Verificamos si se hizo click en un li con data-size
-        if (e.target.matches("li[data-size]")) {
-            const chosenSize = e.target.getAttribute("data-size")
-            // Actualizamos el texto del botón
-            sizeSelectLabel.textContent = chosenSize
-            // Actualizamos el select oculto
-            hiddenSizeSelect.value = chosenSize
-
-            // Cerramos el dropdown
-            sizeOptions.classList.add("hidden")
-        }
-    })
-
-    // (Opcional) Cerrar si se hace click fuera
-    document.addEventListener("click", (e) => {
-        if (
-            !sizeSelectButton.contains(e.target) &&
-            !sizeOptions.contains(e.target)
-        ) {
-            sizeOptions.classList.add("hidden")
-        }
-    })</script>';*/
-
-                        }
                     }
-                    elseif (key($parsedProducts) == "variant_color") {
-                        $variants = $parsedProducts['variant_color'];
-                        if($variants){
-                            /*$selectVariants = $this->showColorVariant("", $variants[0]);
-
-// En lugar de addslashes():
-                            $escapedHtml = json_encode($selectVariants);
-
-// Luego tu script:
-                            echo "<script>
-    var content = $escapedHtml;
-    document.querySelector('#color-options').innerHTML = content;
-</script>";
-
-                            echo '<script>
-    // Tomamos todos los botones de color
-    const colorButtons = document.querySelectorAll(".color-button");
-    // Tomamos el input oculto (si lo usamos)
-    const hiddenColorInput = document.getElementById("colorInput");
-
-    // Función que marca un botón como seleccionado
-    function setSelectedColor(button) {
-        // 1. Quitamos el “anillo” (ring) de todos los botones
-        colorButtons.forEach((btn) => {
-            btn.classList.remove("ring-2", "ring-offset-2", "ring-blue-500");
-        });
-        // 2. Agregamos el anillo al botón clicado
-        button.classList.add("ring-2", "ring-offset-2", "ring-blue-500");
-
-        // 3. Actualizamos el valor del input oculto
-        if (hiddenColorInput) {
-            hiddenColorInput.value = button.dataset.color;
-        }
-    }
-
-    // Asignamos el evento click a cada botón
-    colorButtons.forEach((btn, index) => {
-        btn.addEventListener("click", () => {
-            setSelectedColor(btn);
-        });
-    });
-
-    // (Opcional) Seleccionar por defecto el primer color,
-    // o cualquier lógica inicial que quieras.
-    if (colorButtons.length > 0) {
-        setSelectedColor(colorButtons[0]);
-    }
-</script>
-';*/
-                        }
-                    }
-
 
                     // Agregas un pequeño separador que ayude al navegador a "pintar"
                     echo "<!-- chunk -->";
@@ -425,6 +366,90 @@ class ProductController extends Controller
         $endLayout = str_replace('{{ //FOOTER}}', $footer, $endLayout);
         echo $endLayout;
         flush(); // Asegurarse de enviar el contenido final
+    }
+
+    private static function getImages($thumbsChunks): array
+    {
+        $dom = new DOMDocument();
+        $dom->loadHTML($thumbsChunks);
+        $xpath = new DOMXPath($dom);
+
+        $images = [];
+        $tes1 = false;
+
+        $imageBlock = $xpath->document->textContent;
+        if ($imageBlock) {
+            $tes1 = trim($xpath->document->textContent);
+        }
+
+        if (!$tes1) {
+            return $images;
+        }
+
+        $bb1 = null;
+        $aa1 = substr($tes1, 0, strrpos($tes1, 'colorToAsin') - 4);
+        $p = strpos($aa1, '[{"hiRes');
+        if ($p) {
+            $bb1 = substr($aa1, $p);
+        }
+
+        if ($bb1) {
+            $bb1 = str_replace("\n", ' ', $bb1);
+            $bb1 = substr($bb1, 0, strpos($bb1, '}]},'));
+            $bb1 .= '}]';
+            $s = trim($bb1);
+            $images = json_decode($s, true);
+        } else {
+            $imgCanvas = $xpath->query('//*[@id="img-canvas"]')->item(0);
+            if ($imgCanvas) {
+                $dom = new DOMDocument();
+                @$dom->loadHTML($imgCanvas->ownerDocument->saveHTML($imgCanvas));
+                $imageElements = $dom->getElementsByTagName('img');
+                $tmpImages = [];
+                foreach ($imageElements as $image) {
+                    if (strpos($image->getAttribute('src'), 'jpg') !== false) {
+                        $tmpImages[] = $image->getAttribute('src');
+                    }
+                }
+
+                $strimg = $tmpImages[0] ?? '';
+
+                $images = [
+                    [
+                        'hiRes' => $strimg,
+                        'thumb' => $strimg,
+                        'large' => $strimg,
+                        'main' => [
+                            $strimg => [355, 355],
+                            $strimg => [450, 450],
+                            $strimg => [425, 425],
+                            $strimg => [450, 450],
+                            $strimg => [425, 425],
+                            $strimg => [466, 466],
+                            $strimg => [522, 522],
+                            $strimg => [569, 569],
+                            $strimg => [679, 679],
+                        ],
+                        'variant' => 'PT06',
+                        'lowRes' => null,
+                        'shoppableScene' => null,
+                    ],
+                ];
+            }
+        }
+
+        $thumbnails = [];
+        $main = '';
+        if ($images) {
+            foreach ($images as $image) {
+                if (isset($image['variant']) && $image['variant'] === 'MAIN' && !$main) {
+                    $main = $image['large'];
+                }
+                $thumbnails[] = $image['large'];
+            }
+        }
+
+        return $thumbnails;
     }
 
     private function parseVariants($id, $html){
@@ -506,7 +531,13 @@ class ProductController extends Controller
 ';
             }else{
                 $selectVariants = $this->showSelectVariant("", $variant);
-
+                $optionSelected = null;
+                foreach($variant["options"] as $option){
+                    if($option["selected"]){
+                        $optionSelected = $option;
+                        break;
+                    }
+                }
                 // Convertimos todo el HTML en una cadena JSON válida
                 $selectVariants = str_replace('{{ select_name }}', $variant["name"], $selectVariants);
                 $escapedHtml = json_encode($selectVariants);
@@ -531,6 +562,7 @@ class ProductController extends Controller
         sizeOptions'.$itera.'.classList.toggle("hidden")
     })
 
+    sizeSelectLabel'.$itera.'.textContent = "'.$optionSelected["text"].'";
     // Manejar la selección de una talla
     sizeOptions'.$itera.'.addEventListener("click", (e) => {
         // Verificamos si se hizo click en un li con data-size
