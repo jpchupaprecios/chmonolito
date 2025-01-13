@@ -13,6 +13,12 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ResultController;
 use App\Http\Middleware\Admin\Admin; // <- Aquí tu middleware
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\BehaviorController;
+
+
+
+Route::get('/bh/{client_session_id}/{url?}', [BehaviorController::class, 'index'])
+    ->name('bh');
 
 /*
 |--------------------------------------------------------------------------

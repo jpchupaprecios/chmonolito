@@ -116,11 +116,11 @@ class ResultController extends Controller
             CURLOPT_TIMEOUT => 30,
             CURLOPT_CONNECTTIMEOUT => 5,
             CURLOPT_ENCODING => '',
-
+/*
             CURLOPT_PROXY => $proxyHost, // Proxy host
             CURLOPT_PROXYPORT => $proxyPort, // Proxy port
             CURLOPT_PROXYUSERPWD => $proxyUser . ':' . $proxyPass, // Proxy authentication
-
+*/
             CURLOPT_BUFFERSIZE => 1024, // Reduce el tamaño del buffer de cURL
             CURLOPT_WRITEFUNCTION => function ($curl, $chunk) {
                 // Supongamos que parse() retorna un array de productos
@@ -164,6 +164,7 @@ class ResultController extends Controller
         // Finalizar la página HTML
         $endLayout = file_get_contents(resource_path('views/layouts/layoutEnd.blade.php'));
         $footer = file_get_contents(resource_path('views/components/footer.blade.php'));
+        $endLayout = str_replace('{{ //PRODUCT_ID }}', 'q='.$query, $endLayout);
         $endLayout = str_replace('{{ //FOOTER}}', $footer, $endLayout);
         echo $endLayout;
         flush(); // Asegurarse de enviar el contenido final

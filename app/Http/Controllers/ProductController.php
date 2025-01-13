@@ -160,7 +160,7 @@ class ProductController extends Controller
         header('Transfer-Encoding: chunked');
         header('Connection: keep-alive');
 
-        echo $this->showLayout();
+        echo $this->showLayout($id);
 
         //\App\Models\ChunkProductLog::truncate();
         $url = 'https://www.amazon.com/dp/' . $id;
@@ -226,11 +226,11 @@ class ProductController extends Controller
             CURLOPT_TIMEOUT => 30,
             CURLOPT_CONNECTTIMEOUT => 5,
             CURLOPT_ENCODING => '',
-
+/*
             CURLOPT_PROXY => $proxyHost, // Proxy host
             CURLOPT_PROXYPORT => $proxyPort, // Proxy port
             CURLOPT_PROXYUSERPWD => $proxyUser . ':' . $proxyPass, // Proxy authentication
-
+*/
             CURLOPT_BUFFERSIZE => 1024, // Reduce el tamaño del buffer de cURL
             CURLOPT_WRITEFUNCTION => function ($curl, $chunk) use (&$buffer, &$datas, $id, &$global, &$formVariants, &$alreadyVariants, &$variantsForm, &$variantsDiv, &$thumbsChunks, &$imagesThumb) {
                 // Supongamos que parse() retorna un array de productos
@@ -363,7 +363,9 @@ class ProductController extends Controller
         // Finalizar la página HTML
         $endLayout = file_get_contents(resource_path('views/layouts/layoutEnd.blade.php'));
         $footer = file_get_contents(resource_path('views/components/footer.blade.php'));
+        $endLayout = str_replace('{{ //PRODUCT_ID }}', 'pid='.$id, $endLayout);
         $endLayout = str_replace('{{ //FOOTER}}', $footer, $endLayout);
+
         echo $endLayout;
         flush(); // Asegurarse de enviar el contenido final
     }
