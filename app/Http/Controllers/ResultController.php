@@ -164,7 +164,7 @@ class ResultController extends Controller
         // Finalizar la página HTML
         $endLayout = file_get_contents(resource_path('views/layouts/layoutEnd.blade.php'));
         $footer = file_get_contents(resource_path('views/components/footer.blade.php'));
-        $endLayout = str_replace('{{ //PRODUCT_ID }}', 'q='.$query, $endLayout);
+        $endLayout = str_replace('{{ //QUERY }}', 'q='.$query, $endLayout);
         $endLayout = str_replace('{{ //FOOTER}}', $footer, $endLayout);
         echo $endLayout;
         flush(); // Asegurarse de enviar el contenido final

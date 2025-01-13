@@ -21,7 +21,7 @@
     sendClientSessionId(clientSessionId);
 
     function sendClientSessionId(clientSessionId) {
-        fetch(`/bh/${clientSessionId}/{{ //PRODUCT_ID }}`, {
+        fetch(`/bh/${clientSessionId}/{{ //QUERY }}`, {
             method: 'GET', // Usa GET ya que tu ruta es una GET
             headers: {
                 'X-Requested-With': 'XMLHttpRequest', // Indica que es una llamada AJAX

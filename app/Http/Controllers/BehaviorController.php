@@ -15,7 +15,19 @@ class BehaviorController extends Controller
             $url = 'https://www.amazon.com/';
         }
 
-        $scrapingSession = ScrapingSession::where("client_session_id", $client_session_id)->first();
+        if(strpos($url, '=') !== false){
+            $tmp = explode('=', $url);
+            if($tmp[0] == 'p'){
+                $url = 'https://www.amazon.com/dp/' . $tmp[1];
+            }elseif($tmp[0] == 'q'){
+                $url = "https://www.amazon.com/s?k=" . urlencode($tmp[1]) . "&language=es_US&page=1";
+            }
+        }
+
+        $scrapingSession = null;
+        if($client_session_id){
+            $scrapingSession = ScrapingSession::where("client_session_id", $client_session_id)->first();
+        }
 
         if(!$scrapingSession){
             $cookies = SymfonyPanther::getCookies($url);

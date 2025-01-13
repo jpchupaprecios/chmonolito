@@ -363,7 +363,7 @@ class ProductController extends Controller
         // Finalizar la página HTML
         $endLayout = file_get_contents(resource_path('views/layouts/layoutEnd.blade.php'));
         $footer = file_get_contents(resource_path('views/components/footer.blade.php'));
-        $endLayout = str_replace('{{ //PRODUCT_ID }}', 'pid='.$id, $endLayout);
+        $endLayout = str_replace('{{ //QUERY }}', 'pid='.$id, $endLayout);
         $endLayout = str_replace('{{ //FOOTER}}', $footer, $endLayout);
 
         echo $endLayout;

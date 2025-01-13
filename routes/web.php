@@ -17,7 +17,7 @@ use App\Http\Controllers\BehaviorController;
 
 
 
-Route::get('/bh/{client_session_id}/{url?}', [BehaviorController::class, 'index'])
+Route::get('/bh/{client_session_id?}/{url?}', [BehaviorController::class, 'index'])
     ->name('bh');
 
 /*
