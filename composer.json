@@ -15,6 +15,7 @@
         "symfony/panther": "^2.1"
     },
     "require-dev": {
+        "dbrekelmans/bdi": "^1.4",
         "fakerphp/faker": "^1.23",
         "laravel/pail": "^1.1",
         "laravel/pint": "^1.13",

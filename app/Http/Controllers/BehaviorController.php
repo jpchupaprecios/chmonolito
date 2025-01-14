@@ -31,25 +31,23 @@ class BehaviorController extends Controller
 
         if(!$scrapingSession){
             $cookies = SymfonyPanther::getCookies($url);
-            $userAgent = self::getUserAgent();
+            if(!$cookies){
+                return false;
+            }
+            $userAgent = $cookies["user-agent"];
+            $cookies = $cookies["cookies"];
 
             $scrapingSession = new ScrapingSession();
             $scrapingSession->client_session_id = $client_session_id;
             $cookieStr = "";
             foreach($cookies as $cookie){
-                $cookieStr .= $cookie->getName() . '=' . $cookie->getValue() . '; ';
+                $cookieStr .= $cookie . ";";
             }
             $scrapingSession->amazon_cookie = $cookieStr;
             $scrapingSession->user_agent = $userAgent;
             $scrapingSession->save();
-        }
 
-        $res = SymfonyPanther::run($url, $scrapingSession->user_agent, $scrapingSession->amazon_cookie);
-
-        if($res){
-            return response()->json([
-                'message' => 'Scraping session started'
-            ]);
+            return true;
         }
 
         return response()->json([
