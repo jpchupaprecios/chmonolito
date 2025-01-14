@@ -24,13 +24,14 @@ class AmazonSearchParser
         }
     }
 
-    public static function parse($chunk)
+    public static function parse($chunk, &$usedAsins, &$counter, &$bufferLimited)
     {
         //if (strpos($chunk, 'data-asin="B') !== false) {
         //    $productNodes = $xpath->query('//div[@data-asin and string-length(@data-asin) > 0]');
 
         if (strpos($chunk, 'data-asin="B') !== false) {
-
+            $counter++;
+            $bufferLimited .= $chunk;
         //if(strpos($chunk, 'a-size') !== false){
             // Repara y procesa el HTML
             $cleanHtml = self::repairHtml($chunk);
@@ -88,15 +89,95 @@ class AmazonSearchParser
                 }
 
                 if($price && $image && $productId){
-                    $products[] = [
-                        "product_id" => $productId,
-                        "price" => $price,
-                        "image" => $image,
-                        "brand" => "",
-                        "title" => $title,
-                    ];
+                    if(!in_array($productId, $usedAsins)){
+                        $usedAsins[] = $productId;
+
+                        $products[] = [
+                            "product_id" => $productId,
+                            "price" => $price,
+                            "image" => $image,
+                            "brand" => "",
+                            "title" => $title,
+                        ];
+                    }
                 }
 
+            }
+
+            if(!$products){
+                $cleanHtml = self::repairHtml($bufferLimited);
+
+                // Carga el DOM reparado
+                self::initHtmlDom($cleanHtml);
+
+                $xpath = new DOMXPath(self::$dom);
+                $productNodes = $xpath->query('//div[@data-asin and string-length(@data-asin) > 0]');
+                $products = [];
+                foreach($productNodes as $productNode) {
+                    $productDom = new DOMDocument();
+                    $productDom->appendChild($productDom->importNode($productNode, true));
+                    $html = $productDom->saveHTML();
+                    $productXPath = new DOMXPath($productDom);
+                    $titleElement = $productXPath->query('.//span[contains(@class, "a-size-base-plus")]');
+                    if (!count($titleElement)) {
+                        $titleElement = $productXPath->query('.//h2//span');
+                    }
+                    $title = "";
+                    if (count($titleElement)) {
+                        $titleElement = $titleElement->item(0);
+                        $title = trim($titleElement->textContent);
+                    }
+                    $image = "";
+                    $imageAlt = "";
+                    $imageElement = $productXPath->query('.//img');
+                    if (count($imageElement)) {
+                        $imageElement = $imageElement->item(0);
+                        if ($imageElement) {
+                            $image = $imageElement->getAttribute('src');
+                            $imageAlt = $imageElement->getAttribute('alt');
+                        }
+                    }
+
+                    if ($imageAlt && !$title) {
+                        $title = $imageAlt;
+                    }
+
+                    $priceElement = $productXPath->query(
+                        './/span[contains(@class, "a-price")]/span[contains(@class, "a-offscreen")]',
+                    );
+
+                    $price = 0;
+                    if (count($priceElement)) {
+                        $priceElement = $priceElement->item(0);
+                        $price = self::parsePrice($priceElement->textContent);
+                    }
+
+                    $node = $productXPath->query('.//@data-asin');
+                    $productId = "";
+                    if (count($node)) {
+                        $node = $node->item(0);
+                        $productId = $node->nodeValue;
+                    }
+
+                    if ($price && $image && $productId) {
+                        if(!in_array($productId, $usedAsins)){
+                            $usedAsins[] = $productId;
+
+                            $products[] = [
+                                "product_id" => $productId,
+                                "price" => $price,
+                                "image" => $image,
+                                "brand" => "",
+                                "title" => $title,
+                            ];
+                        }
+                    }
+                }
+
+                if($counter == 3){
+                    $counter = 0;
+                    $bufferLimited = "";
+                }
             }
 
             return $products;

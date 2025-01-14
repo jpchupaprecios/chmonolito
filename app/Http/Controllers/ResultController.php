@@ -94,6 +94,9 @@ class ResultController extends Controller
 
         // Asegurarse de enviar los datos al cliente
         flush();
+        $usedAsins = [];
+        $counter = 0;
+        $bufferLimited = "";
 
         // Añadir un padding para evitar buffering
         echo str_repeat(" ", 1024);
@@ -122,9 +125,9 @@ class ResultController extends Controller
             CURLOPT_PROXYUSERPWD => $proxyUser . ':' . $proxyPass, // Proxy authentication
 */
             CURLOPT_BUFFERSIZE => 1024, // Reduce el tamaño del buffer de cURL
-            CURLOPT_WRITEFUNCTION => function ($curl, $chunk) {
+            CURLOPT_WRITEFUNCTION => function ($curl, $chunk) use (&$usedAsins, &$counter, &$bufferLimited) {
                 // Supongamos que parse() retorna un array de productos
-                $parsedProducts = AmazonSearchParser::parse($chunk);
+                $parsedProducts = AmazonSearchParser::parse($chunk, $usedAsins, $counter, $bufferLimited);
 
                 if ($parsedProducts && is_countable($parsedProducts) && count($parsedProducts) > 0) {
                     // Iteras sobre cada producto y renderizas la vista product.blade.php
