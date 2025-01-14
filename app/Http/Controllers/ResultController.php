@@ -128,10 +128,12 @@ class ResultController extends Controller
 
                 if ($parsedProducts && is_countable($parsedProducts) && count($parsedProducts) > 0) {
                     // Iteras sobre cada producto y renderizas la vista product.blade.php
+                        foreach ($parsedProducts as $parsedProduct){
+                            $productHtml = view('pages.result.components.product', [
+                                'productData' => $parsedProduct
+                            ])->render();
+                        }
 
-                        $productHtml = view('pages.result.components.product', [
-                            'productData' => $parsedProducts
-                        ])->render();
 
                         echo "<script>document.querySelector('#product-container')
     .insertAdjacentHTML('beforeend', `" . addslashes($productHtml) . "` );</script>";
