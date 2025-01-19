@@ -199,8 +199,10 @@ final class ApiController extends Controller
     }
 
 
-    public function product(Request $request, $productId, $vendor, $engineId): JsonResponse
+    public function product(Request $request, $productId, $vendor): JsonResponse
     {
+        $engineId = "direct";
+        $ci =  $request->input('ci', "");
         try {
             $getRelatedProducts = $request->input('getRelatedProducts', false) === 'true';
             $getHtml = $request->input('getHtml', false) === 'true';
@@ -244,7 +246,7 @@ final class ApiController extends Controller
             }
 
             $this->productService = $this->productFactory->make($vendor, $engineId);
-            $product = $this->productService->getProductDetails($request, $productId, $vendor, $getRelatedProducts, $getHtml);
+            $product = $this->productService->getProductDetails($request, $productId, $vendor, $getRelatedProducts, $getHtml, $ci);
 
             if ($product->getAttribute('product_id')) {
                 if($product->getAttribute('title') && $product->getAttribute('image')){
@@ -264,7 +266,11 @@ final class ApiController extends Controller
                     if($this->cacheEnable){
                         $product->save();
                     }
-
+                    
+                    return response()->json(['status' => self::STATUS_OK, 'data' => $product])->setStatusCode(
+                        ResponseAlias::HTTP_OK,
+                        Response::$statusTexts[ResponseAlias::HTTP_OK]
+                    );
                     $data = $product->getData();
 
 

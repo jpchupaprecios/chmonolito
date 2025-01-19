@@ -5,7 +5,7 @@ use App\Models\ExtendedDetails\ExtendedDetails;
 interface ExtendedDetailsParserInterface
 {
 
-    public function getData($dom, $xpath, string $productId, int $productDetailsId): ExtendedDetails;
+    public function getData($dom, $xpath, string $productId): ExtendedDetails;
 
     function getDescription();
 

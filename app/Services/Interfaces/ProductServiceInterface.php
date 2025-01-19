@@ -22,7 +22,8 @@ interface ProductServiceInterface
 		string $productId,
 		string $vendor,
 		$getRelatedProducts = false,
-		$getHtml = false
+		$getHtml = false,
+        $ci = ""
 	): ProductDetails;
 
 	public function fetchProductDetails(Request $request, string $productId): \DOMXPath | array | \DOMDocument;

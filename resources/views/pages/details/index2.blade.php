@@ -19,13 +19,14 @@
         <div style="width: 550px; height: 550px; position: relative;">
 
             <!-- Imagen principal -->
+            <div class="skeleton image-placeholder"></div>
             <img
                 class="product-data-image rounded-lg"
                 alt="Imagen principal"
                 loading="lazy" decoding="async"
                 data-nimg="fill"
                 src=""
-                style="position: absolute; height: 100%; width: 100%; inset: 0px; object-fit: cover; color: transparent;"
+                style="display:none; position: absolute; height: 100%; width: 100%; inset: 0px; object-fit: cover; color: transparent;"
             >
         </div>
 
@@ -37,6 +38,11 @@
 
     </div>
     <div>
+        <div class="title-shimmer-wrapper">
+            <div class="skeleton title-shimmer"></div>
+            <br>
+            <div class="skeleton title-shimmer"></div>
+        </div>
         <h1 class="text-3xl font-bold mb-2 product-data-title"></h1>
         <div class="flex items-center mb-2">
             <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">

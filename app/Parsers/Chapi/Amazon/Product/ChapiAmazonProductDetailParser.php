@@ -105,7 +105,7 @@ final class ChapiAmazonProductDetailParser
 
         $this->scriptData = $this->getScriptData((string) $html);
 
-        $variantsParser = new ChapiAmazonVariantsParser($this->xpath);
+        //$variantsParser = new ChapiAmazonVariantsParser($this->xpath);
 
         $images = $this->getImages();
         $image = $images['main'] ?? '';
@@ -175,18 +175,15 @@ final class ChapiAmazonProductDetailParser
         $this->product->setAttribute('type', ProductDetails::TYPE_SIMPLE);
         $this->product->setAttribute('has_variants', false);
 
-        $this->product->save();
+        //$this->product->save();
 
-        $variants = $variantsParser->parse($this->product->getAttribute('product_id'), $this->product->id);
+        //$variants = $variantsParser->parse($this->product->getAttribute('product_id'));
 
         $variantCombinations = [];
-        foreach ($variants as $variant) {
-            $variantCombinations[$variant->product_id] = $variant->product_id;
-        }
 
-        $hasVariants = count($variants) > 0;
+        $hasVariants = false;//count($variants) > 0;
 
-        $this->product->setRelation('variants', $variants);
+        $this->product->setRelation('variants', []);
 
         $this->product->setAttribute('has_combinations', $hasVariants);
 
@@ -197,18 +194,18 @@ final class ChapiAmazonProductDetailParser
         $this->product->setRelation('thumbnails', $this->getThumbnails($thumbnails));
 
         $this->product->setRelation('categories', $categories);
-        $this->product->categories()->saveMany($categories);
+        //$this->product->categories()->saveMany($categories);
 
-        $extendedDetails = $this->chapiAmazonExtendedDetailsParser->getData($this->dom, $this->xpath, $productId, $this->product->id);
+        //$extendedDetails = $this->chapiAmazonExtendedDetailsParser->getData($this->dom, $this->xpath, $productId, $this->product->id);
 
-        $isAllowedByBrand = $notAllowed->isAllowedByBrand($extendedDetails->brand);
+        /*$isAllowedByBrand = $notAllowed->isAllowedByBrand($extendedDetails->brand);
 
         if(!$isAllowedByBrand){
             $this->product->setAttribute('price', 0);
             return $this->product;
         }
 
-        $this->product->setRelation('extendedDetails', $extendedDetails);
+        $this->product->setRelation('extendedDetails', $extendedDetails);*/
 
         return $this->product;
     }
@@ -261,7 +258,7 @@ final class ChapiAmazonProductDetailParser
             ]);
         }
 
-        $this->product->thumbnails()->saveMany($thumbnails);
+        //$this->product->thumbnails()->saveMany($thumbnails);
 
         return $thumbnails;
     }
@@ -592,6 +589,11 @@ final class ChapiAmazonProductDetailParser
             $bb1 .= '}]';
             $s = trim($bb1);
             $images = json_decode($s, true);
+
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $s .= '}}]';
+                $images = json_decode($s, true);
+            }
         } else {
             $imgCanvas = $this->xpath->query('//*[@id="img-canvas"]')->item(0);
             if ($imgCanvas) {

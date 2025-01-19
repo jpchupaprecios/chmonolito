@@ -12,10 +12,13 @@ use Exception;
 use Illuminate\Http\Request;
 use DOMDocument;
 use DOMXPath;
+use App\Models\ScrapingSession;
 final class ChapiAmazonProductService implements ProductServiceInterface
 {
 	private $productDetailParser;
-	private string $cookie;
+    private string $cookie;
+    private string $user_agent;
+
     /**
      * @var CookieService
      */
@@ -41,9 +44,17 @@ final class ChapiAmazonProductService implements ProductServiceInterface
 		string $productId,
 		string $vendor,
 		$getRelatedProducts = false,
-		$getHtml = false
+		$getHtml = false,
+        $ci = ""
 	): ProductDetails {
-        $this->cookie = $this->cookieService->getCookie();//'session-id=140-4885816-6428851;session-id-time=2082787201l;ubid-main=130-9580061-8070705';
+        $this->cookie = "";//$this->cookieService->getCookie();//'session-id=140-4885816-6428851;session-id-time=2082787201l;ubid-main=130-9580061-8070705';
+        if($ci){
+            $scrapingSession = ScrapingSession::where('client_session_id', $ci)->first();
+            if($scrapingSession){
+                $this->cookie = $scrapingSession->amazon_cookie;
+                $this->user_agent = $scrapingSession->user_agent;
+            }
+        }
 		$dom = $this->fetchProductDetails($request, $productId);
 
 		return $this->productDetailParser->parse($dom, $vendor, $productId, $this->cookie, $getRelatedProducts, $getHtml);
@@ -51,8 +62,7 @@ final class ChapiAmazonProductService implements ProductServiceInterface
 
 	public function fetchProductDetails(Request $request, string $productId): \DOMXPath | array
 	{
-        $this->cookie = $this->cookieService->getCookie();
-        $res = ChapiAmazonWebContentService::scrape('https://www.amazon.com/dp/' . $productId, $this->cookie, false);
+        $res = ChapiAmazonWebContentService::scrape('https://www.amazon.com/dp/' . $productId, $this->cookie, $this->user_agent, false);
         return ['result' => $res];
 	}
 

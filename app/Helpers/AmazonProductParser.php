@@ -139,7 +139,10 @@ class AmazonProductParser
         $titleElement = $titleElement ? trim($titleElement->textContent) : '';
 
         if(!$titleElement){
+        }
 
+        if($titleElement){
+            $titleElement = utf8_decode($titleElement);
         }
 
         return str_replace('%', ' Porciento ', $titleElement);

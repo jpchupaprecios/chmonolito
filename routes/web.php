@@ -14,7 +14,7 @@ use App\Http\Controllers\ResultController;
 use App\Http\Middleware\Admin\Admin; // <- Aquí tu middleware
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BehaviorController;
-
+use App\Http\Controllers\ApiController;
 
 
 Route::get('/bh/{client_session_id?}/{url?}', [BehaviorController::class, 'index'])
@@ -50,6 +50,12 @@ Route::post('/logout-admin', [LoginController::class, 'logoutAdmin'])->name('log
 Route::get('/register', [RegisterController::class, 'index'])->name('register');
 Route::post('/register', [RegisterController::class, 'store'])->name('register.perform');
 
+/*
+|--------------------------------------------------------------------------
+| API
+|--------------------------------------------------------------------------
+*/
+Route::get('/api/product/{productId}/{vendor}', [ApiController::class, 'product']);
 /*
 |--------------------------------------------------------------------------
 | RUTAS PÚBLICAS

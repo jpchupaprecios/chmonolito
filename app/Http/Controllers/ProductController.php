@@ -317,6 +317,8 @@ class ProductController extends Controller
                         $title = $parsedProducts['title'];
 
                         echo "<script>
+
+        document.querySelector('.title-shimmer-wrapper').style.display = 'none';
         document.querySelector('.product-data-title').textContent = '" . addslashes($title) . "';
     </script>";
                     }elseif(key($parsedProducts) == "image"){
@@ -324,6 +326,9 @@ class ProductController extends Controller
 
                         echo "<script>
         const imgEl = document.querySelector('.product-data-image');
+        imgEl.style.display = 'block';
+        const imgElShimmer = document.querySelector('.image-placeholder');
+        imgElShimmer.style.display = 'none';
         imgEl.src = '" . addslashes($imageUrl) . "';
         imgEl.alt = 'Imagen del producto';
     </script>";
@@ -562,24 +567,30 @@ class ProductController extends Controller
     // Mostrar/ocultar opciones
     sizeSelectButton'.$itera.'.addEventListener("click", () => {
         sizeOptions'.$itera.'.classList.toggle("hidden")
-    })
+    })';
 
+    if($optionSelected){
+
+    echo '
     sizeSelectLabel'.$itera.'.textContent = "'.$optionSelected["text"].'";
     // Manejar la selección de una talla
     sizeOptions'.$itera.'.addEventListener("click", (e) => {
         // Verificamos si se hizo click en un li con data-size
         if (e.target.matches("li[data-size]")) {
-            const chosenSize = e.target.getAttribute("data-size")
+            const chosenValue = e.target.getAttribute("data-size")
+            const chosenText = e.target.textContent
+
             // Actualizamos el texto del botón
-            sizeSelectLabel'.$itera.'.textContent = chosenSize
+            sizeSelectLabel'.$itera.'.textContent = chosenText
             // Actualizamos el select oculto
-            hiddenSizeSelect'.$itera.'.value = chosenSize
+            hiddenSizeSelect'.$itera.'.value = chosenValue
 
             // Cerramos el dropdown
             sizeOptions'.$itera.'.classList.add("hidden")
         }
-    })
-
+    })';
+    }
+    echo '
     // (Opcional) Cerrar si se hace click fuera
     document.addEventListener("click", (e) => {
         if (

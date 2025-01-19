@@ -6,6 +6,8 @@ namespace App\Services\Chapi\Amazon;
 
 use App\Services\WebContentService;
 use Exception;
+use Illuminate\Support\Facades\Log;
+
 final class ChapiAmazonWebContentService extends WebContentService
 {
     /**
@@ -22,44 +24,140 @@ final class ChapiAmazonWebContentService extends WebContentService
      * @return string|array|false
      * @throws Exception
      */
-    public static function scrape(string $url, ?string $cookie = null, bool $clean = true): string|array|false
+    public static function scrape($url, $cookie = null, $userAgent = "", $clean = true, $debug = false): false|array|string
     {
-        $cookieName = date('Y-m-d') . '-amazon';
-        $cookiePath = storage_path(self::COOKIE_PATH . $cookieName . '.txt');
+        $debug = false;//self::getDebug($debug);
 
-        // Habilitar flush inmediato.
-        ob_implicit_flush(true);
-        ob_end_flush();
+        $debugging = [];
+        if ($debug) {
+            $debugging['methods']['scrape']['benckmark']['start_scraping'] = microtime(true);
+            $debugging['methods']['scrape']['path'] = 'app/Services/Chapi/Amazon/ChapiAmazonWebContentService';
+        }
+
+        /*$proxyHost = env('OXYLABS_PROXY');
+        $proxyPort = env('OXULABS_PORT');
+        $proxyUser = env('OXYLABS_USER_US');
+        $proxyPass = env('OXYLABS_PASS');*/
+
+        if(!$userAgent){
+            $userAgent = self::getUserAgent();
+        }
+        $headers = [
+            'Connection: keep-alive',
+            'Accept: */*',
+            'Content-Language: es-US',
+            'User-Agent: ' . $userAgent,
+        ];
+
+        $proxyUrl = env('OXYLABS_PROXY_URL');
+
+
+        /**/
+        $proxyHost = env('OXYLABS_PROXY');
+        $proxyPort = env('OXULABS_PORT');
+        $proxyUser = env('OXYLABS_USER_US');
+        $proxyPass = env('OXYLABS_PASS');
+        $useProxy = env('USE_PROXY');
+
+        /**/
 
         $curl = curl_init($url);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, self::getHeaders($cookie, $userAgent));
 
-        curl_setopt_array($curl, [
-            CURLOPT_HTTPHEADER => self::getHeaders($cookie),
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_RETURNTRANSFER => false, // Deshabilitar retorno automático.
-            CURLOPT_COOKIEFILE => $cookiePath,
-            CURLOPT_COOKIEJAR => $cookiePath,
-            CURLOPT_USERAGENT => self::getUserAgent(),
-            CURLOPT_TIMEOUT => 30,
-            CURLOPT_CONNECTTIMEOUT => 5,
-            CURLOPT_ENCODING => '',
-            CURLOPT_WRITEFUNCTION => function ($curl, $chunk) {
-                echo $chunk; // Envía cada chunk directamente al cliente.
-                flush();     // Asegúrate de que se envía al navegador.
-                return strlen($chunk);
-            },
-        ]);
+        curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
 
-        curl_exec($curl);
-        $error = curl_error($curl);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+        $cookieName = date('Y-m-d') . 'amazon';
+        curl_setopt($curl, CURLOPT_COOKIEFILE, storage_path('app/' . $cookieName . '.txt'));
+        curl_setopt($curl, CURLOPT_COOKIEJAR, storage_path('app/' . $cookieName . '.txt'));
 
-        if (!empty($error)) {
+        if($useProxy){
+            curl_setopt($curl, CURLOPT_PROXY, $proxyHost);
+            curl_setopt($curl, CURLOPT_PROXYPORT, $proxyPort);
+            curl_setopt($curl, CURLOPT_PROXYUSERPWD, $proxyUser . ':' . $proxyPass);
+        }
+
+        $response = curl_exec($curl);
+        if ($debug) {
+            $debugging['methods']['scrape']['benckmark']['end_scraping'] = microtime(true);
+            $debugging['methods']['scrape']['benckmark']['scraping_result'] = $debugging['methods']['scrape']['benckmark']['end_scraping'] - $debugging['methods']['scrape']['benckmark']['start_scraping'];
+        }
+        $res = [];
+        try {
+            if ($response === false) {
+                $useProxy = env('USE_PROXY');
+                $debugging['methods']['scrape']['reintento'] = true;
+                $error = curl_error($curl);
+                curl_close($curl);
+
+                curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+                curl_setopt($curl, CURLOPT_HTTPHEADER, self::getHeaders($cookie));
+
+                if($useProxy){
+                    curl_setopt($curl, CURLOPT_PROXY, $proxyUrl);
+                }
+
+                $response = curl_exec($curl);
+                curl_close($curl);
+            }
+
+            if ($response === false) {
+                Log::debug('response equals false');
+                $debugging['methods']['scrape']['falla scraping'] = true;
+                $error = curl_error($curl);
+                curl_close($curl);
+                if ($debug) {
+                    $res['debugging'] = $debugging;
+                }
+                return $res;
+            }
             curl_close($curl);
-            throw new Exception("Curl error: $error");
+            $tmpResponse = $response;
+
+
+            if ($debug) {
+                $debugging['methods']['scrape']['benckmark']['start_global_decode'] = microtime(true);
+            }
+            $result = self::decodeChapiDirectCall($url, $response, $clean);
+
+            $res['result'] = $result['response'];
+            if ($debug) {
+                $debugging = array_merge($debugging, $result['debbuging']);
+                $debugging['methods']['scrape']['benckmark']['end_global_decode'] = microtime(true);
+                $debugging['methods']['scrape']['benckmark']['global_decode_result'] = $debugging['methods']['scrape']['benckmark']['end_global_decode'] - $debugging['methods']['scrape']['benckmark']['start_global_decode'];
+            }
+
+
+            if ($debug) {
+                $res['debugging'] = $debugging;
+            }
+
+            if(isset($res["result"])){
+                $res = $res["result"];
+            }
+
+            if(is_string($res)){
+                $body = preg_replace('/\s\s+/', '', $res);
+                $body = preg_replace('/\n/', '', $body);
+                Log::debug('Response return body');
+                return $body;
+            }
+
+            if(is_array($res)){
+                Log::debug('Response return array');
+                return $res;
+            }
+            Log::debug('Response return false');
+            return false;
+        } catch (Exception $e) {
+            curl_close($curl);
+            return false;
         }
 
         curl_close($curl);
-        return true;
+        return false;
     }
 
     /**

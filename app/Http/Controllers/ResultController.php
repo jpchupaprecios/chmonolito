@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Helpers\AmazonSearchParser;
+use DOMDocument;
+use DOMXPath;
+use tidy;
 class ResultController extends Controller
 {
     protected const COOKIE_PATH = 'app/';
@@ -97,6 +100,10 @@ class ResultController extends Controller
         $usedAsins = [];
         $counter = 0;
         $bufferLimited = "";
+        $global = "";
+        $countParsedElements = 0;
+        $countParsedElementsFail = 0;
+        $countParsedElementsFailHtml = "";
 
         // Añadir un padding para evitar buffering
         echo str_repeat(" ", 1024);
@@ -125,9 +132,10 @@ class ResultController extends Controller
             CURLOPT_PROXYUSERPWD => $proxyUser . ':' . $proxyPass, // Proxy authentication
 */
             CURLOPT_BUFFERSIZE => 1024, // Reduce el tamaño del buffer de cURL
-            CURLOPT_WRITEFUNCTION => function ($curl, $chunk) use (&$usedAsins, &$counter, &$bufferLimited) {
+            CURLOPT_WRITEFUNCTION => function ($curl, $chunk) use (&$usedAsins, &$counter, &$bufferLimited, &$global, &$countParsedElements, &$countParsedElementsFail, &$countParsedElementsFailHtml) {
                 // Supongamos que parse() retorna un array de productos
-                $parsedProducts = AmazonSearchParser::parse($chunk, $usedAsins, $counter, $bufferLimited);
+                $global .= $chunk;
+                $parsedProducts = AmazonSearchParser::parse($chunk, $usedAsins, $counter, $bufferLimited, $countParsedElements, $countParsedElementsFail, $countParsedElementsFailHtml);
 
                 if ($parsedProducts && is_countable($parsedProducts) && count($parsedProducts) > 0) {
                     // Iteras sobre cada producto y renderizas la vista product.blade.php
@@ -164,6 +172,15 @@ class ResultController extends Controller
             echo "<p>Error: " . curl_error($curl) . "</p>";
         }
 
+        $cleanHtml = self::repairHtml($global);
+        $dom = new DOMDocument();
+        $dom->loadHTML($cleanHtml);
+        $xpath = new DOMXPath($dom);
+        $productNodes = $xpath->query('//div[@data-asin and string-length(@data-asin) > 0]');
+        $countProductNodes = count($productNodes);
+        $countParsedElements;
+        $countParsedElementsFail;
+        $countParsedElementsFailHtml;
         curl_close($curl);
 
         // Finalizar la página HTML
@@ -175,7 +192,30 @@ class ResultController extends Controller
         flush(); // Asegurarse de enviar el contenido final
     }
 
+    private static function repairHtml(string $html): string
+    {
+        // Usa tidy si está disponible
+        if (extension_loaded('tidy')) {
+            $config = [
+                'indent' => true,
+                'output-xhtml' => true,
+                'wrap' => 200,
+                'input-encoding' => 'utf8',
+                'output-encoding' => 'utf8',
+                'char-encoding' => 'utf8',
+            ];
+            $tidy = new tidy();
+            $cleanHtml = $tidy->repairString($html, $config, 'utf8');
+            return $cleanHtml;
+        }
 
+        // Fallback: Agregar etiquetas básicas si tidy no está disponible
+        if (stripos($html, '<html') === false) {
+            $html = "<html><body>{$html}</body></html>";
+        }
+
+        return $html;
+    }
 
     private function getHeaders($cookie): array
     {

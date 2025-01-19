@@ -9,7 +9,7 @@ use App\Services\Interfaces\WebContentInterface;
 class WebContentService implements WebContentInterface
 {
 
-	public static function scrape(string $url, ?string $cookie = null, bool $clean = true): string|array|false
+    public static function scrape(string $url, ?string $cookie = null, $userAgent = "", bool $clean = true): string|array|false
 	{
 		$headers = [
 			'Connection: keep-alive',
@@ -23,7 +23,7 @@ class WebContentService implements WebContentInterface
 		curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
 
 		if ($cookie) {
-			curl_setopt($curl, CURLOPT_HTTPHEADER, self::getHeaders($cookie));
+			curl_setopt($curl, CURLOPT_HTTPHEADER, self::getHeaders($cookie, $userAgent));
 		}
 
 		$response = curl_exec($curl);
@@ -110,36 +110,19 @@ class WebContentService implements WebContentInterface
      * @param string|null $cookie
      * @return array
      */
-    public static function getHeaders(?string $cookie): array
+    public static function getHeaders(?string $cookie, string $userAgent): array
 	{
+        if(!$userAgent){
+            $userAgent = self::getUserAgent();
+        }
 		$headers = [
 			'Accept-Encoding: gzip, deflate, br',
 			'Connection: keep-alive',
 			'Accept: */*',
 			'Content-Language: es-US',
-			'User-Agent: ' . self::getUserAgent(),
-			'Cookie: ' . self::getStrCookie($cookie),
+			'User-Agent: ' . $userAgent,
+			'Cookie: ' . $cookie//self::getStrCookie($cookie),
 		];
-
-		if (mt_rand(0, 1)) {
-			$headers[] = 'Downlink: ' . mt_rand(10, 40);
-		}
-
-		if (mt_rand(0, 1)) {
-			$headers[] = 'Rtt: ' . mt_rand(50, 149);
-		}
-
-		if (mt_rand(0, 1)) {
-			$headers[] = 'Pragma: no-cache';
-		}
-
-		if (mt_rand(0, 1)) {
-			$headers[] = 'Ect: 4g';
-		}
-
-		if (mt_rand(0, 1)) {
-			$headers[] = 'DNT: 1';
-		}
 
 		return $headers;
 	}

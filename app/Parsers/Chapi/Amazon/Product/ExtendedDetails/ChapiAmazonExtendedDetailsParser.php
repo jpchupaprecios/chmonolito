@@ -20,7 +20,7 @@ class ChapiAmazonExtendedDetailsParser implements ExtendedDetailsParserInterface
 
     const VENDOR = 'amazon';
 
-    public function getData($dom, $xpath, string $productId, int $productDetailsId): ExtendedDetails
+    public function getData($dom, $xpath, string $productId): ExtendedDetails
     {
         $this->dom = $dom;
         $this->xpath = $xpath;
@@ -28,7 +28,7 @@ class ChapiAmazonExtendedDetailsParser implements ExtendedDetailsParserInterface
         try {
 
             $this->extendedDetails = ExtendedDetails::create([
-                'product_details_id' => $productDetailsId,
+                'product_details_id' => "",
                 'product_id' => $productId,
                 'html_description' => $this->getDescription(),
                 'brand' => $this->getBrand(),
@@ -43,7 +43,7 @@ class ChapiAmazonExtendedDetailsParser implements ExtendedDetailsParserInterface
 
             //$this->relatedProductsCarousel();
             //$this->alsoBoughtCarousel();
-            $this->extendedDetails->save();
+            //$this->extendedDetails->save();
             return $this->extendedDetails;
 
         } catch (Exception $e) {

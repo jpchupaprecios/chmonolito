@@ -18,10 +18,9 @@ final class ChapiAmazonVariantsParser
 		$this->xpath = $xpath;
 	}
 
-	public function parse(string $currentAsin, int $productId, $dom): array
+	public function parse(string $currentAsin): array
 	{
 		$variantNames = $this->getVariantNames();
-        //$dom->saveHTML();
 		$matchingDivs = $this->getMatchingDivs();
 
 		if (empty($variantNames)) {
@@ -39,7 +38,7 @@ final class ChapiAmazonVariantsParser
 			$variantBlock = $this->getVariantBlock($name);
 
             if($variantBlock === null){
-                $videoHtml = $dom->saveHTML();
+                //$videoHtml = $dom->saveHTML();
             }
 
 			$variantType = 'default';
@@ -55,7 +54,7 @@ final class ChapiAmazonVariantsParser
 				$variantData = [
 					'name' => $name,
 					'type' => $variantType,
-					'title' => utf8_encode($title),
+					'title' => utf8_decode($title),
 					'options' => $this->processVariants($variantBlock, $currentAsin, $variantType),
 				];
 
@@ -166,7 +165,7 @@ final class ChapiAmazonVariantsParser
                 }
 			}
 
-			$optionData['text'] = trim(str_replace("\n", '', $optionData['text']));
+			$optionData['text'] = trim(str_replace("\n", '', utf8_decode($optionData['text'])));
 
 			if ($optionData['text'] && $optionData['sku']) {
 				$variantData[] = $optionData;
