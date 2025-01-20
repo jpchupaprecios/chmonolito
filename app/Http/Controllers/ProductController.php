@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use App\Helpers\AmazonSearchParser;
 use DOMDocument;
 use DOMXPath;
+use App\Parsers\Chapi\Amazon\Complete\Product\ChapiAmazonProductDetailParser;
 class ProductController extends Controller
 {
     protected const COOKIE_PATH = 'app/';
@@ -239,6 +240,7 @@ class ProductController extends Controller
                     $imagesThumb = self::getImages($thumbsChunks);
                     $html = "";
                     if($imagesThumb){
+                        echo "<script>pData.thumbs = JSON.parse('" . json_encode($imagesThumb) . "');</script>";
                         $html .= '<div class="flex space-x-2 thumbnails">';
                         foreach($imagesThumb as $image) {
                             $html .= '
@@ -311,13 +313,15 @@ class ProductController extends Controller
 
                         // Mandar un script que actualice la clase .product-data-price
                         echo "<script>
+        pData.price = " . addslashes($price) . ";
+        document.querySelector('.price-shimmer').style.display = 'none';
         document.querySelector('.product-data-price').textContent = '$ " . addslashes($price) . " MXN';
     </script>";
                     }elseif(key($parsedProducts) == "title"){
                         $title = $parsedProducts['title'];
 
                         echo "<script>
-
+        pData.title = '" . addslashes($title) . "';
         document.querySelector('.title-shimmer-wrapper').style.display = 'none';
         document.querySelector('.product-data-title').textContent = '" . addslashes($title) . "';
     </script>";
@@ -325,6 +329,7 @@ class ProductController extends Controller
                         $imageUrl = $parsedProducts['image'];
 
                         echo "<script>
+        pData.image = '" . addslashes($imageUrl) . "';
         const imgEl = document.querySelector('.product-data-image');
         imgEl.style.display = 'block';
         const imgElShimmer = document.querySelector('.image-placeholder');
@@ -336,6 +341,9 @@ class ProductController extends Controller
                         $rating = $parsedProducts['rating'];
 
                         echo "<script>
+pData.rating = '" . addslashes($rating) . "';
+document.querySelector('.rating-stars-wrapper').style.display = 'none';
+document.querySelector('.color-shimmer-options').style.display = 'block';
         document.querySelector('.product-data-rating').textContent = '" . addslashes($rating) . "';
     </script>";
                     }
@@ -364,6 +372,24 @@ class ProductController extends Controller
             $a = 1;
         }
         curl_close($curl);
+
+        $chapiAmazonProductDetailParser = new ChapiAmazonProductDetailParser($cookie);
+        $data = $chapiAmazonProductDetailParser->parse(["result" => $global], "amazon", $id, $cookie);
+
+        /**/
+        $dom = new DOMDocument();
+        $dom->loadHTML($global);
+        $this->xpath = new DOMXPath($dom);
+        $variantsParser = new ChapiAmazonVariantsParser($this->xpath);
+        $variants = $variantsParser->parse($id, (int)$id, $dom);
+        if($data && $variants){
+            $data->variants = $variants;
+        }
+        if($data){
+            echo "<script>pDataC = JSON.parse('" . json_encode($data) . "');</script>";
+        }
+
+        /**/
 
         // Finalizar la página HTML
         $endLayout = file_get_contents(resource_path('views/layouts/layoutEnd.blade.php'));
@@ -468,7 +494,9 @@ class ProductController extends Controller
 
         $uniqueVariants = [];
         $alreadySeenNames = [];
-
+        if($variants){
+            echo "<script>pData.variants = JSON.parse('" . json_encode($variants) . "');</script>";
+        }
         foreach ($variants as $variant) {
             $name = $variant['name'];
 

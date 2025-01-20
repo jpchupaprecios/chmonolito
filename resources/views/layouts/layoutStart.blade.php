@@ -22,6 +22,11 @@
 
     </head>
     <body class="f_SW50ZXI">
+    <script>
+        let pData = {
+            variants:[]
+        };
+    </script>
     <style type="text/tailwindcss">@layer base {
             * {
                 @apply border-border;
