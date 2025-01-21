@@ -270,6 +270,14 @@ final class ChapiAmazonProductDetailParser
     {
         $currentPrice = 0.0;
 
+        $priceUsed = $this->xpath->query( '//*[@id="usedBuySection"]' )->item(0);
+
+        if( $priceUsed ){
+            if( str_contains( strtolower($priceUsed->textContent), 'buy used:' ) || str_contains( strtolower($priceUsed->textContent), 'usado:' ) ){
+                return 0.0;
+            }
+        }
+
         $priceSelectors = [
             '//*[@id="priceblock_ourprice"]',
             '//form//*[@class="a-button a-button-selected"]//*[@class="a-size-mini"]',
@@ -281,6 +289,11 @@ final class ChapiAmazonProductDetailParser
         foreach ($priceSelectors as $selector) {
             $priceElement = $this->xpath->query($selector)->item(0);
             if ($priceElement) {
+                if( $priceElement->parentNode->parentNode->parentNode->tagName == 'tr' ) {
+                    if( str_contains( strtolower( $priceElement->parentNode->parentNode->parentNode->textContent ), 'list price' ) ) {
+                        continue;
+                    }
+                }
                 $tmpPrice = $this->price_format($priceElement->textContent);
                 if ($tmpPrice > $currentPrice) {
                     $currentPrice = $tmpPrice;

@@ -234,6 +234,7 @@ class ProductController extends Controller
 */
             CURLOPT_BUFFERSIZE => 1024, // Reduce el tamaño del buffer de cURL
             CURLOPT_WRITEFUNCTION => function ($curl, $chunk) use (&$buffer, &$datas, $id, &$global, &$formVariants, &$alreadyVariants, &$variantsForm, &$variantsDiv, &$thumbsChunks, &$imagesThumb) {
+
                 // Supongamos que parse() retorna un array de productos
                 if(!$imagesThumb && strpos($chunk, '[{"hiRes') !== false){
                     $thumbsChunks.= $chunk;

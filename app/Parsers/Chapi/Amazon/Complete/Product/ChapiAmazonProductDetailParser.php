@@ -254,7 +254,7 @@ final class ChapiAmazonProductDetailParser
         $priceUsed = $this->xpath->query( '//*[@id="usedBuySection"]' )->item(0);
 
         if( $priceUsed ){
-            if( str_contains( $priceUsed->textContent, 'Buy used:' ) || str_contains( $priceUsed->textContent, 'usado:' ) ){
+            if( str_contains( strtolower($priceUsed->textContent), 'buy used:' ) || str_contains( strtolower($priceUsed->textContent), 'usado:' ) ){
                 return 0.0;
             }
         }
