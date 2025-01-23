@@ -30,6 +30,11 @@ class AmazonProductParser
                 'imgTagWrapperId'
             ],
         ],
+        "rating" => [
+            "contains" => [
+                'reviewCountTextLinkedHistogram'
+            ],
+        ],
     ];
 
     private static function initHtmlDom($html)
@@ -92,6 +97,9 @@ class AmazonProductParser
                 case "title":
                     $content = self::getTitle();
                     break;
+                case "rating":
+                    $content = self::getRating();
+                    break;
                 case "price":
                     $content = self::getPrice();
                     break;
@@ -124,6 +132,13 @@ class AmazonProductParser
         }
 
         return null; // Ningún elemento procesado aún
+    }
+
+    private static function getRating(): float
+    {
+        $xpath = new DOMXPath(self::$dom);
+        $ratingElement = $xpath->query('//span[contains(@class, "reviewCountTextLinkedHistogram")]//span')->item(0);
+        return $ratingElement ? floatval(trim($ratingElement->textContent)) : 0;
     }
 
     private static function getTitle(): string
