@@ -12,6 +12,7 @@ use App\Parsers\Chapi\Amazon\Complete\Product\Offers\ChapiAmazonOfferParser;
 use App\Parsers\Chapi\Amazon\Complete\Product\Variants\ChapiAmazonVariantsParser;
 //use App\Services\Chapi\Amazon\Complete\ChapiAmazonWebContentService;
 use App\Parsers\Chapi\Amazon\Product\ExtendedDetails\ChapiAmazonExtendedDetailsParser;
+use App\Services\Chapi\Amazon\ChapiAmazonWebContentService;
 use App\Models\Product\Category;
 use DOMDocument;
 use DOMXPath;
@@ -167,7 +168,9 @@ final class ChapiAmazonProductDetailParser
         $categories = $this->getCategories($vendor);
         $this->product->breadcrumbs_flat = $this->getBreadcrumbsFlat($title, $categories);
 
-
+        if(strlen($this->product->breadcrumbs_flat)>200){
+            $this->product->breadcrumbs_flat = "";
+        }
 
         $this->product->has_variants = false;
 
@@ -750,6 +753,9 @@ final class ChapiAmazonProductDetailParser
     private function getShippingOffer(): float
     {
         $price = 0.0;
+        if(!$this->product){
+            return $price;
+        }
         $productPrice = $this->product->price;
         $productId = $this->product->product_id;
         $url = 'https://www.amazon.com/gp/product/ajax/ref=dp_aod_unknown_mbc?asin=' . $productId . '&m=&qid=&smid=&sourcecustomerorglistid=&sourcecustomerorglistitemid=&sr=&pc=dp&experienceId=aodAjaxMain';
