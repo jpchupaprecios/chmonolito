@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Parsers\Chapi\Amazon\Results\Pagination;
 
-use App\Models\Search\Pagination\Pagination;
-use App\Models\Search\Pagination\PaginationLink;
 use DOMXPath;
 
 final class ChapiAmazonPaginationParser
@@ -15,9 +13,9 @@ final class ChapiAmazonPaginationParser
      */
     private static $pagination;
 
-    public static function parse($xpath, $query): bool|Pagination
+    public static function parse($xpath, $query): bool|Pagination|\stdClass
 	{
-		self::$pagination = new Pagination();
+		self::$pagination = new \stdClass();
 
 		$selectedElement = $xpath->query('//span[contains(@class, "s-pagination-selected")]')->item(0);
 		if (!$selectedElement) {
@@ -25,12 +23,12 @@ final class ChapiAmazonPaginationParser
 		}
 
 		$current = $selectedElement->textContent;
-        self::$pagination->setAttribute('current', trim($current));
+        self::$pagination->current = trim($current);
 
 		$links = self::iterableElements($xpath, $query);
 
 
-        self::$pagination->setRelation('links', $links);
+        self::$pagination->links = $links;
 
 		return self::$pagination;
 	}
@@ -49,9 +47,9 @@ final class ChapiAmazonPaginationParser
             } else {
                 $title = $li->textContent;
 
-                $link = new PaginationLink();
-                $link->setAttribute('link', ($href));
-                $link->setAttribute('title', trim($title));
+                $link = new \stdClass();
+                $link->link = ($href);
+                $link->title = trim($title);
 
                 $links[] = $link;
             }
@@ -62,7 +60,7 @@ final class ChapiAmazonPaginationParser
             $totalPages = $title + 0;
         }
 
-        self::$pagination->setAttribute('totalPages', $totalPages);
+        self::$pagination->totalPages = $totalPages;
 
 		return $links;
 	}
@@ -71,7 +69,7 @@ final class ChapiAmazonPaginationParser
 	protected static function setNextLink($dataUrl): void
 	{
 		if ($dataUrl && is_string($dataUrl)) {
-            self::$pagination->setAttribute('next', ($dataUrl));
+            self::$pagination->next = ($dataUrl);
 		}
 	}
 }

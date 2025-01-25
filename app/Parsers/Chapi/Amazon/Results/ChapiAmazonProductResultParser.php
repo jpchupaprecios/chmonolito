@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Parsers\Chapi\Amazon\Results;
 
 use App\Helpers\NotAllowed;
-use App\Models\Search\ProductResult;
 use DOMElement;
 use DOMXPath;
 use DOMDocument;
@@ -17,18 +16,18 @@ final class ChapiAmazonProductResultParser
     private static DOMElement $product;
     protected static string $vendor;
 
-    public static function parse($product, $vendor, $position): ProductResult
+    public static function parse($product, $vendor, $position): ProductResult|\stdClass
     {
         $hmtl = self::getElementHtml($product);
         self::$product = $product;
         self::$vendor = $vendor;
-        $productResult = new ProductResult();
+        $productResult = new \stdClass();
 
-        $productResult->setAttribute('position', $position);
+        $productResult->position = $position;
 
         $productId = self::getProductId();
 
-        $productResult->setAttribute('product_id', $productId);
+        $productResult->product_id = $productId;
         $title = self::getTitle();
 
         $notAllowed = new NotAllowed(self::$vendor);
@@ -40,7 +39,7 @@ final class ChapiAmazonProductResultParser
             return $productResult;
         }
 
-        $productResult->setAttribute('title', $title);
+        $productResult->title = $title;
 
         $price = self::getPrice();
         $shippingPrice = self::getShippingPrice();
@@ -48,10 +47,10 @@ final class ChapiAmazonProductResultParser
             $price = $price + $shippingPrice;
         }
 
-        $productResult->setAttribute('price', $price);
-        $productResult->setAttribute('score', self::getScore());
-        $productResult->setAttribute('rating', self::getRating());
-        $productResult->setAttribute('image', self::getImage());
+        $productResult->price = $price;
+        $productResult->score = self::getScore();
+        $productResult->rating = self::getRating();
+        $productResult->image = self::getImage();
 
         return $productResult;
     }

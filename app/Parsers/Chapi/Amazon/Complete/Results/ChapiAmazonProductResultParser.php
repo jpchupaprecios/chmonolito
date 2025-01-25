@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Parsers\Chapi\Amazon\Results;
+namespace App\Parsers\Chapi\Amazon\Complete\Results;
 
 use App\Helpers\NotAllowed;
 use App\Models\Search\ProductResult;

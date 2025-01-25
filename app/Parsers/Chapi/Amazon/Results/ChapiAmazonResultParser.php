@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Parsers\Chapi\Amazon\Results;
 
-use App\Models\Search\Pagination\Pagination;
-use App\Models\Search\Result;
 use App\Parsers\Chapi\Amazon\Results\Pagination\ChapiAmazonPaginationParser;
 use App\Parsers\Chapi\Amazon\Results\Refinements\ChapiAmazonRefinementsParser;
 
@@ -15,7 +13,7 @@ use DOMXPath;
 final class ChapiAmazonResultParser
 {
     public array $refinements = [];
-    public Pagination $pagination;
+    public $pagination;
 
     public function parse($result, $vendor, $query, $debug = false): array|Result
     {
@@ -23,20 +21,19 @@ final class ChapiAmazonResultParser
             return [];
         }
 
-        $this->results = $result;
         if ($debug && isset($result['debugging'])) {
             //$debugging = $result['debugging'];
             //$debugging['methods']['parse']['benchmark']['start_global_parse'] = microtime(true);
         }
-
+        $this->results = $this->loadHtml($result);
         $this->products = [];
         $paginationHtml = '';
         $refinementsHtml = '';
 
 
-        $resultObj = new Result();
-        $resultObj->setAttribute('vendor', $vendor);
-        $resultObj->setAttribute('query', $query);
+        $resultObj = new \stdClass();
+        $resultObj->vendor = $vendor;
+        $resultObj->query = $query;
 
 
         $resultsProducts = $this->results->query('//div[@data-asin and string-length(@data-asin) > 0]');
@@ -66,7 +63,7 @@ final class ChapiAmazonResultParser
             //$debugging['methods']['parse']['benchmark']['end_pagination_parse'] = microtime(true);
             //$debugging['methods']['parse']['benchmark']['total_pagination_parse'] = $debugging['methods']['parse']['benchmark']['end_pagination_parse'] - $debugging['methods']['parse']['benchmark']['start_pagination_parse'];
         } else {
-            $this->pagination = new Pagination();
+            $this->pagination = new \stdClass();
         }
 
         if ($refinementsHtml) {
@@ -84,10 +81,10 @@ final class ChapiAmazonResultParser
         //$debugging['methods']['parse']['benchmark']['end_products_parse'] = microtime(true);
         //$debugging['methods']['parse']['benchmark']['total_products_parse'] = $debugging['methods']['parse']['benchmark']['end_products_parse'] - $debugging['methods']['parse']['benchmark']['start_products_parse'];
 
-        $resultObj->setAttribute('totalProducts', count($this->products));
-        $resultObj->setRelation('products', $this->products);
-        $resultObj->setRelation('pagination', $this->pagination);
-        $resultObj->setRelation('refinements', $this->refinements);
+        $resultObj->totalProducts = count($this->products);
+        $resultObj->products = $this->products;
+        $resultObj->pagination = $this->pagination;
+        $resultObj->refinements = $this->refinements;
 
         $ret = [];
         //if ($debug) {

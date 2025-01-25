@@ -37,11 +37,11 @@ final class ChapiAmazonRefinementsParser
                             $name = $nameElement->getAttribute('title');
                             $link = $nameElement->getAttribute('href');
                             $checked = !$xpath->query('.//a//span[contains(@class, "a-declarative")]', $li)->length;
-                            $linkObj = new RefinementLinks();
+                            $linkObj = new \stdClass();
                             $t = trim(utf8_decode($name));
-                            $linkObj->setAttribute('title', mb_convert_encoding($t, 'UTF-8', 'ISO-8859-1'));
-                            $linkObj->setAttribute('link', $link);
-                            $linkObj->setAttribute('checked', $checked);
+                            $linkObj->title = mb_convert_encoding($t, 'UTF-8', 'ISO-8859-1');
+                            $linkObj->link = $link;
+                            $linkObj->checked = $checked;
 
                             $isAllowedByKeyword = $notAllowed->isAllowedByKeyword($t);
 
@@ -51,9 +51,9 @@ final class ChapiAmazonRefinementsParser
                         }
                     }
                     if (!empty($links)) {
-                        $refinement = new Refinement();
-                        $refinement->setAttribute('title', $title);
-                        $refinement->setRelation('links', $links);
+                        $refinement = new \stdClass();
+                        $refinement->title = $title;
+                        $refinement->links = $links;
                         $refinements[] = $refinement;
                     }
                 } elseif ($title !== 'Availability' && $title !== 'Condition') {
@@ -71,11 +71,11 @@ final class ChapiAmazonRefinementsParser
                                     if (!$xpath->query('.//span[contains(@class, "a-color-base")]', $linkElement)->length) {
                                         $checked = true;
                                     }
-                                    $linkObj = new RefinementLinks();
+                                    $linkObj = new \stdClass();
                                     $t = trim(utf8_decode($name));
-                                    $linkObj->setAttribute('title', mb_convert_encoding($t, 'UTF-8', 'ISO-8859-1'));
-                                    $linkObj->setAttribute('link', $link);
-                                    $linkObj->setAttribute('checked', $checked);
+                                    $linkObj->title = mb_convert_encoding($t, 'UTF-8', 'ISO-8859-1');
+                                    $linkObj->link = $link;
+                                    $linkObj->checked = $checked;
 
                                     $isAllowedByKeyword = $notAllowed->isAllowedByKeyword($t);
 
@@ -91,11 +91,11 @@ final class ChapiAmazonRefinementsParser
                                 $name = $nameElement->textContent;
                                 $link = $linkElement->getAttribute('href');
                                 $checked = $xpath->query('.//span[contains(@class, "a-text-bold")]', $linkElement)->length > 0;
-                                $linkObj = new RefinementLinks();
+                                $linkObj = new \stdClass();
                                 $t = trim(utf8_decode($name));
-                                $linkObj->setAttribute('title', mb_convert_encoding($t, 'UTF-8', 'ISO-8859-1'));
-                                $linkObj->setAttribute('link', $link);
-                                $linkObj->setAttribute('checked', $checked);
+                                $linkObj->title = mb_convert_encoding($t, 'UTF-8', 'ISO-8859-1');
+                                $linkObj->link = $link;
+                                $linkObj->checked = $checked;
 
                                 $isAllowedByKeyword = $notAllowed->isAllowedByKeyword($t);
 
@@ -106,9 +106,9 @@ final class ChapiAmazonRefinementsParser
                         }
                     }
                     if (!empty($links)) {
-                        $refinement = new Refinement();
-                        $refinement->setAttribute('title', mb_convert_encoding($title, 'UTF-8', 'ISO-8859-1'));
-                        $refinement->setRelation('links', $links);
+                        $refinement = new \stdClass();
+                        $refinement->title = mb_convert_encoding($title, 'UTF-8', 'ISO-8859-1');
+                        $refinement->links =  $links;
                         $refinements[] = $refinement;
                     }
                 }
@@ -141,11 +141,11 @@ final class ChapiAmazonRefinementsParser
                             $name = $nameElement->textContent;
                             $link = $a->getAttribute('href');
                             $checked = $xpath->query('.//span[contains(@class, "a-text-bold")]', $a)->length > 0;
-                            $linkObj = new RefinementLinks();
+                            $linkObj = new \stdClass();
                             $t = trim(utf8_decode($name));
-                            $linkObj->setAttribute('title', mb_convert_encoding($t, 'UTF-8', 'ISO-8859-1'));
-                            $linkObj->setAttribute('link', $link);
-                            $linkObj->setAttribute('checked', $checked);
+                            $linkObj->title = mb_convert_encoding($t, 'UTF-8', 'ISO-8859-1');
+                            $linkObj->link = $link;
+                            $linkObj->checked = $checked;
 
                             $isAllowedByKeyword = $notAllowed->isAllowedByKeyword($t);
 
@@ -155,9 +155,9 @@ final class ChapiAmazonRefinementsParser
                         }
                     }
                     if (!empty($links)) {
-                        $refinement = new Refinement();
-                        $refinement->setAttribute('title', mb_convert_encoding($title, 'UTF-8', 'ISO-8859-1'));
-                        $refinement->setRelation('links', $links);
+                        $refinement = new \stdClass();
+                        $refinement->title = mb_convert_encoding($title, 'UTF-8', 'ISO-8859-1');
+                        $refinement->links =  $links;
                         $refinements[] = $refinement;
                     }
                 }
@@ -182,11 +182,11 @@ final class ChapiAmazonRefinementsParser
                         $name = trim($nameElement->textContent);
                         $link = $a->getAttribute('href');
                         $checked = $xpath->query('.//span[contains(@class, "a-text-bold")]', $a)->length > 0;
-                        $linkObj = new RefinementLinks();
+                        $linkObj = new \stdClass();
                         $t = trim(utf8_decode($name));
-                        $linkObj->setAttribute('title', mb_convert_encoding($t, 'UTF-8', 'ISO-8859-1'));
-                        $linkObj->setAttribute('link', $link);
-                        $linkObj->setAttribute('checked', $checked);
+                        $linkObj->title = mb_convert_encoding($t, 'UTF-8', 'ISO-8859-1');
+                        $linkObj->link = $link;
+                        $linkObj->checked = $checked;
 
                         $isAllowedByKeyword = $notAllowed->isAllowedByKeyword($t);
 
@@ -196,9 +196,9 @@ final class ChapiAmazonRefinementsParser
                     }
                 }
                 if (!empty($links)) {
-                    $refinement = new Refinement();
-                    $refinement->setAttribute('title', trim(mb_convert_encoding($title, 'UTF-8', 'ISO-8859-1')));
-                    $refinement->setRelation('links', $links);
+                    $refinement = new \stdClass();
+                    $refinement->title = trim(mb_convert_encoding($title, 'UTF-8', 'ISO-8859-1'));
+                    $refinement->links = $links;
                     $refinements[] = $refinement;
                 }
             }
@@ -220,11 +220,11 @@ final class ChapiAmazonRefinementsParser
                             $name = $nameElement->textContent;
                             $link = $a->getAttribute('href');
                             $checked = $xpath->query('.//span[contains(@class, "a-text-bold")]', $a)->length > 0;
-                            $linkObj = new RefinementLinks();
+                            $linkObj = new \stdClass();
                             $t = trim(utf8_decode($name));
-                            $linkObj->setAttribute('title', mb_convert_encoding($t, 'UTF-8', 'ISO-8859-1'));
-                            $linkObj->setAttribute('link', $link);
-                            $linkObj->setAttribute('checked', $checked);
+                            $linkObj->title = mb_convert_encoding($t, 'UTF-8', 'ISO-8859-1');
+                            $linkObj->link = $link;
+                            $linkObj->checked = $checked;
 
                             $isAllowedByKeyword = $notAllowed->isAllowedByKeyword($t);
 
@@ -234,9 +234,9 @@ final class ChapiAmazonRefinementsParser
                         }
                     }
                     if (!empty($links)) {
-                        $refinement = new Refinement();
-                        $refinement->setAttribute('title', trim(mb_convert_encoding($title, 'UTF-8', 'ISO-8859-1')));
-                        $refinement->setRelation('links', $links);
+                        $refinement = new \stdClass();
+                        $refinement->title = trim(mb_convert_encoding($title, 'UTF-8', 'ISO-8859-1'));
+                        $refinement->links = $links;
                         $refinements[] = $refinement;
                     }
                 }

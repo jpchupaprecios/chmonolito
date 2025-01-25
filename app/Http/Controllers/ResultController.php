@@ -7,6 +7,7 @@ use App\Helpers\AmazonSearchParser;
 use DOMDocument;
 use DOMXPath;
 use tidy;
+use App\Parsers\Chapi\Amazon\Results\ChapiAmazonResultParser;
 class ResultController extends Controller
 {
     protected const COOKIE_PATH = 'app/';
@@ -173,14 +174,18 @@ class ResultController extends Controller
         }
 
         $cleanHtml = self::repairHtml($global);
-        $dom = new DOMDocument();
+        /*$dom = new DOMDocument();
         $dom->loadHTML($cleanHtml);
         $xpath = new DOMXPath($dom);
         $productNodes = $xpath->query('//div[@data-asin and string-length(@data-asin) > 0]');
         $countProductNodes = count($productNodes);
         $countParsedElements;
         $countParsedElementsFail;
-        $countParsedElementsFailHtml;
+        $countParsedElementsFailHtml;*/
+        $this->resultParser = new ChapiAmazonResultParser();
+        $resultParse = $this->resultParser->parse($cleanHtml, "amazon", $query, false);
+
+
         curl_close($curl);
 
         // Finalizar la página HTML

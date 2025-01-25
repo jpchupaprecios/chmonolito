@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Parsers\Chapi\Amazon\Results\Refinements;
+namespace App\Parsers\Chapi\Amazon\Complete\Results\Refinements;
 
 
 use App\Helpers\NotAllowed;
