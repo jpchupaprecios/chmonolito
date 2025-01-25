@@ -3,11 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\AmazonProductParser;
+use App\Models\ScrapingSession;
 use App\Parsers\Chapi\Amazon\Product\Variants\ChapiAmazonVariantsParser;
+use App\Services\CookieService;
 use Illuminate\Http\Request;
 use App\Helpers\AmazonSearchParser;
 use DOMDocument;
 use DOMXPath;
+use App\Models\Product;
 use App\Parsers\Chapi\Amazon\Complete\Product\ChapiAmazonProductDetailParser;
 class ProductController extends Controller
 {
@@ -153,6 +156,9 @@ class ProductController extends Controller
 
     public function index(Request $request, $id, $vendor)
     {
+        $product = Product::where("product_id", $id)->where("vendor", $vendor)->first();
+
+
         // Configura las cabeceras para streaming
         header('Content-Type: text/html; charset=UTF-8');
         header('Cache-Control: no-cache');
@@ -172,7 +178,9 @@ class ProductController extends Controller
         $url = 'https://www.amazon.com/dp/' . $id;
         $cookieName = date('Y-m-d') . '-amazon';
         $cookiePath = storage_path(self::COOKIE_PATH . $cookieName . '.txt');
-        $cookie = 'session-id=145-2848617-2390738; i18n-prefs=USD; ...'; // tu cookie
+        //$cookie = 'session-id=145-2848617-2390738; i18n-prefs=USD; ...'; // tu cookie
+        //$scrapingSession = ScrapingSession::where("client_session_id", $client_session_id)->first();
+        $cookie = "";
 
         // Variables que usaremos para parsear
         $datas = [
@@ -227,286 +235,302 @@ class ProductController extends Controller
         $firstValidResponse = false;
         $buffer             = '';  // si tu parser necesita un buffer global
 
-        // Construimos un handle por cada proxy
-        foreach ($proxies as $proxy) {
-            $curl = curl_init($url);
-            curl_setopt_array($curl, [
-                CURLOPT_HTTPHEADER     => self::getHeaders($cookie),
-                CURLOPT_FOLLOWLOCATION => true,
-                CURLOPT_RETURNTRANSFER => false, // Deshabilita retorno automático
-                CURLOPT_COOKIEFILE     => $cookiePath,
-                CURLOPT_COOKIEJAR      => $cookiePath,
-                CURLOPT_USERAGENT      => self::getUserAgent(),
-                CURLOPT_TIMEOUT        => 30,
-                CURLOPT_CONNECTTIMEOUT => 5,
-                CURLOPT_ENCODING       => '',
-                CURLOPT_PROXY          => $proxy['host'],
-                CURLOPT_PROXYPORT      => $proxy['port'],
-                CURLOPT_PROXYUSERPWD   => $proxy['user'] . ':' . $proxy['pass'],
-                CURLOPT_BUFFERSIZE     => 1024,
-                CURLOPT_WRITEFUNCTION  => function ($ch, $chunk) use (
-                    &$buffer,
-                    &$datas,
-                    $id,
-                    &$global,
-                    &$formVariants,
-                    &$alreadyVariants,
-                    &$variantsForm,
-                    &$variantsDiv,
-                    &$thumbsChunks,
-                    &$imagesThumb,
-                    &$firstValidResponse,
-                    &$winnerHandle
-                ) {
-                    // Si ya hay respuesta válida
-                    if ($firstValidResponse) {
-                        // Abortamos cualquier handle que no sea el ganador
-                        if ($ch !== $winnerHandle) {
-                            return 0;
+        if(!$product){
+            $product = new Product();
+            // Construimos un handle por cada proxy
+            foreach ($proxies as $proxy) {
+                $curl = curl_init($url);
+                curl_setopt_array($curl, [
+                    CURLOPT_HTTPHEADER     => self::getHeaders($cookie),
+                    CURLOPT_FOLLOWLOCATION => true,
+                    CURLOPT_RETURNTRANSFER => false, // Deshabilita retorno automático
+                    CURLOPT_COOKIEFILE     => $cookiePath,
+                    CURLOPT_COOKIEJAR      => $cookiePath,
+                    CURLOPT_USERAGENT      => self::getUserAgent(),
+                    CURLOPT_TIMEOUT        => 30,
+                    CURLOPT_CONNECTTIMEOUT => 5,
+                    CURLOPT_ENCODING       => '',
+                    CURLOPT_PROXY          => $proxy['host'],
+                    CURLOPT_PROXYPORT      => $proxy['port'],
+                    CURLOPT_PROXYUSERPWD   => $proxy['user'] . ':' . $proxy['pass'],
+                    CURLOPT_BUFFERSIZE     => 1024,
+                    CURLOPT_WRITEFUNCTION  => function ($ch, $chunk) use (
+                        &$buffer,
+                        &$datas,
+                        $id,
+                        &$global,
+                        &$formVariants,
+                        &$alreadyVariants,
+                        &$variantsForm,
+                        &$variantsDiv,
+                        &$thumbsChunks,
+                        &$imagesThumb,
+                        &$firstValidResponse,
+                        &$winnerHandle,
+                        &$product
+                    ) {
+                        // Si ya hay respuesta válida
+                        if ($firstValidResponse) {
+                            // Abortamos cualquier handle que no sea el ganador
+                            if ($ch !== $winnerHandle) {
+                                return 0;
+                            }
                         }
-                    }
 
-                    // Buscar thumbs
-                    if (!$imagesThumb && strpos($chunk, '[{"hiRes') !== false) {
-                        $thumbsChunks .= $chunk;
-                        $imagesThumb = self::getImages($thumbsChunks);
+                        // Buscar thumbs
+                        if (!$imagesThumb && strpos($chunk, '[{"hiRes') !== false) {
+                            $thumbsChunks .= $chunk;
+                            $imagesThumb = self::getImages($thumbsChunks);
 
-                        if ($imagesThumb) {
-                            // Asignamos el handle ganador si todavía no lo hemos hecho
+                            if ($imagesThumb) {
+                                // Asignamos el handle ganador si todavía no lo hemos hecho
+                                if (!$winnerHandle) {
+                                    $winnerHandle = $ch;
+                                }
+                                $firstValidResponse = true;
+
+                                echo "<script>pData.thumbs = JSON.parse('" . json_encode($imagesThumb) . "');</script>";
+                                $html = '<div class="flex space-x-2 thumbnails">';
+                                foreach ($imagesThumb as $image) {
+                                    $html .= '
+                                    <img
+                                        alt=""
+                                        loading="lazy"
+                                        decoding="async"
+                                        data-nimg="fill"
+                                        class="rounded-md thumb-img"
+                                        src="' . $image . '"
+                                        style="position: absolute; height: 100%; width: 100%; inset: 0px; object-fit: cover; color: transparent;"
+                                    >
+                                ';
+                                }
+                                $html .= '</div>';
+                                $escapedHtml = json_encode($html);
+                                echo "<script>
+                                var content   = $escapedHtml;
+                                var container = document.querySelector('#thumbnails-wrapper');
+                                if (container) {
+                                    container.insertAdjacentHTML('beforeend', content);
+                                }
+                            </script>";
+                            }
+                        }
+
+                        // Buscar variantes
+                        if (!$alreadyVariants) {
+                            if ($formVariants) {
+                                $formVariants .= $chunk;
+                            }
+                            if (strpos($chunk, 'twister-plus-inline-twister') !== false) {
+                                $formVariants .= $chunk;
+                                $variantsDiv = true;
+                            }
+                            if (strpos($chunk, 'form id="twiste') !== false) {
+                                $formVariants .= $chunk;
+                                $variantsForm = true;
+                            }
+                            if ($variantsDiv) {
+                                if ($formVariants && strpos($chunk, 'dp-cif aok-hidden') !== false) {
+                                    $formVariants .= $chunk;
+                                    $this->parseVariants($id, $formVariants);
+                                    $alreadyVariants = true;
+                                    // Asignamos handle ganador si no lo teníamos
+                                    if (!$winnerHandle) {
+                                        $winnerHandle = $ch;
+                                    }
+                                    $firstValidResponse = true;
+                                    $formVariants       = "";
+                                }
+                            }
+                            if ($variantsForm) {
+                                if ($formVariants && strpos($chunk, '</form') !== false) {
+                                    $formVariants .= $chunk;
+                                    $this->parseVariants($id, $formVariants);
+                                    $alreadyVariants = true;
+                                    if (!$winnerHandle) {
+                                        $winnerHandle = $ch;
+                                    }
+                                    $firstValidResponse = true;
+                                    $formVariants       = "";
+                                }
+                            }
+                        }
+
+                        // Acumulamos en $global
+                        $global .= $chunk;
+
+                        // Parseamos chunk a chunk (si tu parser lo requiere)
+                        $parsedProducts = AmazonProductParser::processHtmlChunks($chunk, $buffer, $datas, $id);
+
+                        if ($parsedProducts && is_countable($parsedProducts) && count($parsedProducts) > 0) {
+                            // Asignamos el ganador si todavía no está
                             if (!$winnerHandle) {
                                 $winnerHandle = $ch;
                             }
                             $firstValidResponse = true;
 
-                            echo "<script>pData.thumbs = JSON.parse('" . json_encode($imagesThumb) . "');</script>";
-                            $html = '<div class="flex space-x-2 thumbnails">';
-                            foreach ($imagesThumb as $image) {
-                                $html .= '
-                                <img
-                                    alt=""
-                                    loading="lazy"
-                                    decoding="async"
-                                    data-nimg="fill"
-                                    class="rounded-md thumb-img"
-                                    src="' . $image . '"
-                                    style="position: absolute; height: 100%; width: 100%; inset: 0px; object-fit: cover; color: transparent;"
-                                >
-                            ';
+                            // Vemos qué tipo de dato se ha extraído
+                            if (isset($parsedProducts['price'])) {
+                                $price = $parsedProducts['price'];
+                                $product->price = $price;
+                                echo "<script>
+                                pData.price = '" . addslashes($price) . "';
+                                document.querySelector('.price-shimmer').style.display = 'none';
+                                document.querySelector('.product-data-price').textContent = '$ " . addslashes($price) . " MXN';
+                            </script>";
                             }
-                            $html .= '</div>';
-                            $escapedHtml = json_encode($html);
-                            echo "<script>
-                            var content   = $escapedHtml;
-                            var container = document.querySelector('#thumbnails-wrapper');
-                            if (container) {
-                                container.insertAdjacentHTML('beforeend', content);
+                            if (isset($parsedProducts['title'])) {
+                                $title = $parsedProducts['title'];
+                                $product->title = $title;
+                                echo "<script>
+                                pData.title = '" . addslashes($title) . "';
+                                document.querySelector('.title-shimmer-wrapper').style.display = 'none';
+                                document.querySelector('.product-data-title').textContent = '" . addslashes($title) . "';
+                            </script>";
                             }
-                        </script>";
-                        }
-                    }
+                            if (isset($parsedProducts['image'])) {
 
-                    // Buscar variantes
-                    if (!$alreadyVariants) {
-                        if ($formVariants) {
-                            $formVariants .= $chunk;
-                        }
-                        if (strpos($chunk, 'twister-plus-inline-twister') !== false) {
-                            $formVariants .= $chunk;
-                            $variantsDiv = true;
-                        }
-                        if (strpos($chunk, 'form id="twiste') !== false) {
-                            $formVariants .= $chunk;
-                            $variantsForm = true;
-                        }
-                        if ($variantsDiv) {
-                            if ($formVariants && strpos($chunk, 'dp-cif aok-hidden') !== false) {
-                                $formVariants .= $chunk;
-                                $this->parseVariants($id, $formVariants);
-                                $alreadyVariants = true;
-                                // Asignamos handle ganador si no lo teníamos
-                                if (!$winnerHandle) {
-                                    $winnerHandle = $ch;
-                                }
-                                $firstValidResponse = true;
-                                $formVariants       = "";
+                                $imageUrl = $parsedProducts['image'];
+                                $product->image = $imageUrl;
+                                echo "<script>
+                                pData.image = '" . addslashes($imageUrl) . "';
+                                const imgEl        = document.querySelector('.product-data-image');
+                                const imgElShimmer = document.querySelector('.image-placeholder');
+                                imgElShimmer.style.display = 'none';
+                                imgEl.style.display = 'block';
+                                imgEl.src = '" . addslashes($imageUrl) . "';
+                                imgEl.alt = 'Imagen del producto';
+                            </script>";
                             }
-                        }
-                        if ($variantsForm) {
-                            if ($formVariants && strpos($chunk, '</form') !== false) {
-                                $formVariants .= $chunk;
-                                $this->parseVariants($id, $formVariants);
-                                $alreadyVariants = true;
-                                if (!$winnerHandle) {
-                                    $winnerHandle = $ch;
-                                }
-                                $firstValidResponse = true;
-                                $formVariants       = "";
-                            }
-                        }
-                    }
-
-                    // Acumulamos en $global
-                    $global .= $chunk;
-
-                    // Parseamos chunk a chunk (si tu parser lo requiere)
-                    $parsedProducts = AmazonProductParser::processHtmlChunks($chunk, $buffer, $datas, $id);
-
-                    if ($parsedProducts && is_countable($parsedProducts) && count($parsedProducts) > 0) {
-                        // Asignamos el ganador si todavía no está
-                        if (!$winnerHandle) {
-                            $winnerHandle = $ch;
-                        }
-                        $firstValidResponse = true;
-
-                        // Vemos qué tipo de dato se ha extraído
-                        if (isset($parsedProducts['price'])) {
-                            $price = $parsedProducts['price'];
-                            echo "<script>
-                            pData.price = '" . addslashes($price) . "';
-                            document.querySelector('.price-shimmer').style.display = 'none';
-                            document.querySelector('.product-data-price').textContent = '$ " . addslashes($price) . " MXN';
-                        </script>";
-                        }
-                        if (isset($parsedProducts['title'])) {
-                            $title = $parsedProducts['title'];
-                            echo "<script>
-                            pData.title = '" . addslashes($title) . "';
-                            document.querySelector('.title-shimmer-wrapper').style.display = 'none';
-                            document.querySelector('.product-data-title').textContent = '" . addslashes($title) . "';
-                        </script>";
-                        }
-                        if (isset($parsedProducts['image'])) {
-                            $imageUrl = $parsedProducts['image'];
-                            echo "<script>
-                            pData.image = '" . addslashes($imageUrl) . "';
-                            const imgEl        = document.querySelector('.product-data-image');
-                            const imgElShimmer = document.querySelector('.image-placeholder');
-                            imgElShimmer.style.display = 'none';
-                            imgEl.style.display = 'block';
-                            imgEl.src = '" . addslashes($imageUrl) . "';
-                            imgEl.alt = 'Imagen del producto';
-                        </script>";
-                        }
-                        if (isset($parsedProducts['rating'])) {
-                            $rating      = floatval($parsedProducts['rating']);
-                            $fullStars   = floor($rating);
-                            $decimalPart = $rating - $fullStars;
-                            if ($decimalPart > 0) {
-                                if ($decimalPart >= 0.6) {
-                                    $fullStars++;
-                                    $halfStar = 0;
+                            if (isset($parsedProducts['rating'])) {
+                                $rating      = floatval($parsedProducts['rating']);
+                                $product->rating = $rating;
+                                $fullStars   = floor($rating);
+                                $decimalPart = $rating - $fullStars;
+                                if ($decimalPart > 0) {
+                                    if ($decimalPart >= 0.6) {
+                                        $fullStars++;
+                                        $halfStar = 0;
+                                    } else {
+                                        $halfStar = 1;
+                                    }
                                 } else {
-                                    $halfStar = 1;
+                                    $halfStar = 0;
                                 }
-                            } else {
-                                $halfStar = 0;
-                            }
-                            if ($fullStars > 5) {
-                                $fullStars = 5;
-                                $halfStar  = 0;
-                            }
-                            $emptyStars = 5 - ($fullStars + $halfStar);
+                                if ($fullStars > 5) {
+                                    $fullStars = 5;
+                                    $halfStar  = 0;
+                                }
+                                $emptyStars = 5 - ($fullStars + $halfStar);
 
-                            $starsHtml = "";
-                            for ($i = 0; $i < $fullStars; $i++) {
-                                $starsHtml .= '<svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1
-                                1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034
-                                a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54
-                                1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838
-                                -.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98
-                                8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951
-                                -.69l1.07-3.292z"></path></svg>';
-                            }
-                            if ($halfStar) {
-                                $starsHtml .= '<svg class="w-5 h-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                                <defs>
-                                    <linearGradient id="half-star">
-                                        <stop offset="50%" stop-color="#facc15"/>
-                                        <stop offset="50%" stop-color="#d1d5db"/>
-                                    </linearGradient>
-                                </defs>
-                                <path fill="url(#half-star)" d="M9.049 2.927c.3-.921
-                                1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969
-                                0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364
-                                1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8
-                                -2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838
-                                -.197-1.539-1.118l1.07-3.292a1 1 0 00-.364
-                                -1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461
-                                a1 1 0 00.951-.69l1.07-3.292z"></path>
-                                </svg>';
-                            }
-                            for ($i = 0; $i < $emptyStars; $i++) {
-                                $starsHtml .= '<svg class="w-5 h-5 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902
-                                0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371
-                                1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07
-                                3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1
-                                1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197
-                                -1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98
-                                8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0
-                                00.951-.69l1.07-3.292z"></path></svg>';
-                            }
-                            $starsHtml .= '<span class="ml-2 text-gray-600 product-data-rating">' . addslashes($rating) . '</span>';
+                                $starsHtml = "";
+                                for ($i = 0; $i < $fullStars; $i++) {
+                                    $starsHtml .= '<svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1
+                                    1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034
+                                    a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54
+                                    1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838
+                                    -.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98
+                                    8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951
+                                    -.69l1.07-3.292z"></path></svg>';
+                                }
+                                if ($halfStar) {
+                                    $starsHtml .= '<svg class="w-5 h-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                                    <defs>
+                                        <linearGradient id="half-star">
+                                            <stop offset="50%" stop-color="#facc15"/>
+                                            <stop offset="50%" stop-color="#d1d5db"/>
+                                        </linearGradient>
+                                    </defs>
+                                    <path fill="url(#half-star)" d="M9.049 2.927c.3-.921
+                                    1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969
+                                    0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364
+                                    1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8
+                                    -2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838
+                                    -.197-1.539-1.118l1.07-3.292a1 1 0 00-.364
+                                    -1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461
+                                    a1 1 0 00.951-.69l1.07-3.292z"></path>
+                                    </svg>';
+                                }
+                                for ($i = 0; $i < $emptyStars; $i++) {
+                                    $starsHtml .= '<svg class="w-5 h-5 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902
+                                    0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371
+                                    1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07
+                                    3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1
+                                    1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197
+                                    -1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98
+                                    8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0
+                                    00.951-.69l1.07-3.292z"></path></svg>';
+                                }
+                                $starsHtml .= '<span class="ml-2 text-gray-600 product-data-rating">' . addslashes($rating) . '</span>';
 
-                            $escapedStarsHtml = json_encode($starsHtml);
-                            echo "<script>
-                            pData.rating = '" . addslashes($rating) . "';
-                            document.querySelector('.rating-stars-wrapper').style.display = 'flex';
-                            document.querySelector('.color-shimmer-options').style.display = 'none';
-                            document.querySelector('.product-data-rating').textContent = '" . addslashes($rating) . "';
-                            document.querySelector('.rating-stars-wrapper').innerHTML = $escapedStarsHtml;
-                        </script>";
+                                $escapedStarsHtml = json_encode($starsHtml);
+                                echo "<script>
+                                pData.rating = '" . addslashes($rating) . "';
+                                document.querySelector('.rating-stars-wrapper').style.display = 'flex';
+                                document.querySelector('.color-shimmer-options').style.display = 'none';
+                                document.querySelector('.product-data-rating').textContent = '" . addslashes($rating) . "';
+                                document.querySelector('.rating-stars-wrapper').innerHTML = $escapedStarsHtml;
+                            </script>";
+                            }
+
+                            // Enviamos pequeños chunks para forzar el flush
+                            echo "<!-- chunk -->";
+                            echo str_repeat(" ", 1024);
+                            flush();
                         }
 
-                        // Enviamos pequeños chunks para forzar el flush
-                        echo "<!-- chunk -->";
-                        echo str_repeat(" ", 1024);
-                        flush();
+                        // Devolvemos la cantidad de bytes procesados
+                        return strlen($chunk);
                     }
+                ]);
 
-                    // Devolvemos la cantidad de bytes procesados
-                    return strlen($chunk);
-                }
-            ]);
-
-            curl_multi_add_handle($multiCurl, $curl);
-            $handles[] = $curl;
-        }
-
-        // Ejecutamos el bucle principal de multi cURL
-        do {
-            $status = curl_multi_exec($multiCurl, $active);
-            // Opcionalmente un pequeño timeout en select para no bloquear mucho
-            curl_multi_select($multiCurl, 0.2);
-
-            // Si ya hay un handle ganador
-            if ($firstValidResponse && $winnerHandle) {
-                // Quitar del multiCurl todos los demás
-                foreach ($handles as $curl) {
-                    if ($curl !== $winnerHandle) {
-                        curl_multi_remove_handle($multiCurl, $curl);
-                        curl_close($curl);
-                    }
-                }
-                // Dejamos en $handles solo el ganador
-                $handles = [$winnerHandle];
-                // No hacemos break, para terminar de leer el HTML completo
+                curl_multi_add_handle($multiCurl, $curl);
+                $handles[] = $curl;
             }
-        } while ($active && $status == CURLM_OK);
 
-        // Cerrar el handle final
-        foreach ($handles as $curl) {
-            curl_multi_remove_handle($multiCurl, $curl);
-            curl_close($curl);
-        }
-        curl_multi_close($multiCurl);
+            // Ejecutamos el bucle principal de multi cURL
+            do {
+                $status = curl_multi_exec($multiCurl, $active);
+                // Opcionalmente un pequeño timeout en select para no bloquear mucho
+                curl_multi_select($multiCurl, 0.2);
 
-        // Parseo final (p. ej. si quieres extraer más cosas con tu parser “completo”)
-        $chapiAmazonProductDetailParser = new ChapiAmazonProductDetailParser($cookie);
-        $data = $chapiAmazonProductDetailParser->parse(["result" => $global], "amazon", $id, $cookie);
+                // Si ya hay un handle ganador
+                if ($firstValidResponse && $winnerHandle) {
+                    // Quitar del multiCurl todos los demás
+                    foreach ($handles as $curl) {
+                        if ($curl !== $winnerHandle) {
+                            curl_multi_remove_handle($multiCurl, $curl);
+                            curl_close($curl);
+                        }
+                    }
+                    // Dejamos en $handles solo el ganador
+                    $handles = [$winnerHandle];
+                    // No hacemos break, para terminar de leer el HTML completo
+                }
+            } while ($active && $status == CURLM_OK);
 
-        if ($global) {
+            // Cerrar el handle final
+            foreach ($handles as $curl) {
+                curl_multi_remove_handle($multiCurl, $curl);
+                curl_close($curl);
+            }
+
+            curl_multi_close($multiCurl);
+
+            $product->product_id = $id;
+            $product->vendor = $vendor;
+            $product->save();
+
+            if ($global) {
+
+            // Parseo final (p. ej. si quieres extraer más cosas con tu parser “completo”)
+            $chapiAmazonProductDetailParser = new ChapiAmazonProductDetailParser($cookie);
+            $data = $chapiAmazonProductDetailParser->parse(["result" => $global], "amazon", $id, $cookie);
+
+            $product->save();
+
             $dom = new DOMDocument();
             @$dom->loadHTML($global);
             $this->xpath = new DOMXPath($dom);
@@ -518,6 +542,100 @@ class ProductController extends Controller
             if ($data) {
                 echo "<script>pDataC = JSON.parse('" . json_encode($data) . "');</script>";
             }
+        }
+
+        }else{
+                $price = $product->price;
+                echo "<script>
+                                pData.price = '" . addslashes($price) . "';
+                                document.querySelector('.price-shimmer').style.display = 'none';
+                                document.querySelector('.product-data-price').textContent = '$ " . addslashes($price) . " MXN';
+                            </script>";
+                $title = $product->title;
+                echo "<script>
+                                pData.title = '" . addslashes($title) . "';
+                                document.querySelector('.title-shimmer-wrapper').style.display = 'none';
+                                document.querySelector('.product-data-title').textContent = '" . addslashes($title) . "';
+                            </script>";
+                $imageUrl = $product->image;
+                echo "<script>
+                                pData.image = '" . addslashes($imageUrl) . "';
+                                const imgEl        = document.querySelector('.product-data-image');
+                                const imgElShimmer = document.querySelector('.image-placeholder');
+                                imgElShimmer.style.display = 'none';
+                                imgEl.style.display = 'block';
+                                imgEl.src = '" . addslashes($imageUrl) . "';
+                                imgEl.alt = 'Imagen del producto';
+                            </script>";
+                $rating = $product->rating;
+                $fullStars   = floor($rating);
+                $decimalPart = $rating - $fullStars;
+                if ($decimalPart > 0) {
+                    if ($decimalPart >= 0.6) {
+                        $fullStars++;
+                        $halfStar = 0;
+                    } else {
+                        $halfStar = 1;
+                    }
+                } else {
+                    $halfStar = 0;
+                }
+                if ($fullStars > 5) {
+                    $fullStars = 5;
+                    $halfStar  = 0;
+                }
+                $emptyStars = 5 - ($fullStars + $halfStar);
+
+                $starsHtml = "";
+                for ($i = 0; $i < $fullStars; $i++) {
+                    $starsHtml .= '<svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1
+                                    1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034
+                                    a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54
+                                    1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838
+                                    -.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98
+                                    8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951
+                                    -.69l1.07-3.292z"></path></svg>';
+                }
+                if ($halfStar) {
+                    $starsHtml .= '<svg class="w-5 h-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                                    <defs>
+                                        <linearGradient id="half-star">
+                                            <stop offset="50%" stop-color="#facc15"/>
+                                            <stop offset="50%" stop-color="#d1d5db"/>
+                                        </linearGradient>
+                                    </defs>
+                                    <path fill="url(#half-star)" d="M9.049 2.927c.3-.921
+                                    1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969
+                                    0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364
+                                    1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8
+                                    -2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838
+                                    -.197-1.539-1.118l1.07-3.292a1 1 0 00-.364
+                                    -1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461
+                                    a1 1 0 00.951-.69l1.07-3.292z"></path>
+                                    </svg>';
+                }
+                for ($i = 0; $i < $emptyStars; $i++) {
+                    $starsHtml .= '<svg class="w-5 h-5 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902
+                                    0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371
+                                    1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07
+                                    3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1
+                                    1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197
+                                    -1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98
+                                    8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0
+                                    00.951-.69l1.07-3.292z"></path></svg>';
+                }
+                $starsHtml .= '<span class="ml-2 text-gray-600 product-data-rating">' . addslashes($rating) . '</span>';
+
+                $escapedStarsHtml = json_encode($starsHtml);
+                echo "<script>
+                                pData.rating = '" . addslashes($rating) . "';
+                                document.querySelector('.rating-stars-wrapper').style.display = 'flex';
+                                document.querySelector('.color-shimmer-options').style.display = 'none';
+                                document.querySelector('.product-data-rating').textContent = '" . addslashes($rating) . "';
+                                document.querySelector('.rating-stars-wrapper').innerHTML = $escapedStarsHtml;
+                            </script>";
         }
 
         // Cerramos el HTML, footer y flush final

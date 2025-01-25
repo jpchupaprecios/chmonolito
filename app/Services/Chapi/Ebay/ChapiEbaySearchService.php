@@ -79,16 +79,16 @@ final class ChapiEbaySearchService implements SearchServiceInterface
 
 	public function fetchSearchResults(Request $request, string $query, int $page, $filters = null): \DOMXPath
 	{
-		$parsedQuery = urlencode($query);
-		$country = 'us';
-		$alreadySold = true;
-		$condition = 'all';
-		$type = 'all';
+        $parsedQuery = urlencode($query);
+        $country = 'us';
+        $alreadySold = false;
+        $condition = 'all';
+        $type = 'all';
 
-		$alreadySoldString = $alreadySold ? '&LH_Complete=1&LH_Sold=1' : '';
-		$parsedQuery = urlencode($query);
-		$url = 'https://www.ebay' . self::$countryDict[$country] . '/sch/i.html?_from=R40&_nkw=' . $parsedQuery .
-			$alreadySoldString . self::$conditionDict[$condition] . self::$typeDict[$type] . '&_pgn=' . $page;
+        $alreadySoldString = $alreadySold ? '&LH_Complete=1&LH_Sold=1' : '';
+        $parsedQuery = urlencode($query);
+        $url = 'https://www.ebay' . self::$countryDict[$country] . '/sch/i.html?_nkw=' . $parsedQuery .
+            $alreadySoldString . self::$conditionDict[$condition] . self::$typeDict[$type] . '&_pgn=' . $page;
 
         $cookie = $this->cookieService->getCookie();
 
