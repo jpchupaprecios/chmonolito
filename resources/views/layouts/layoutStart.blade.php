@@ -23,6 +23,7 @@
     </head>
     <body class="f_SW50ZXI">
     <script>
+        let resultsC = null;
         let pData = {
             variants:[]
         };

@@ -64,7 +64,7 @@ final class ChapiAmazonProductResultParser
     protected static function getTitle(): string
     {
         $xpath = new DOMXPath(self::$product->ownerDocument);
-        $titleElement = $xpath->query('.//h2[contains(@class, "a-size-mini")]', self::$product)->item(0);
+        $titleElement = $xpath->query('.//h2[contains(@class, "a-text-normal")]', self::$product)->item(0);
         $titleElement = $titleElement ? trim(utf8_decode($titleElement->textContent)) : '';
         $titleElement = mb_convert_encoding($titleElement, 'UTF-8', 'ISO-8859-1');
         return $titleElement;

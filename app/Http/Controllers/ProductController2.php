@@ -217,7 +217,7 @@ class ProductController2 extends Controller
                         $thumbsChunks .= $chunk;
                         $imagesThumb = self::getImages($thumbsChunks);
                         if ($imagesThumb) {
-                            echo "<script>pData.thumbs = JSON.parse('" . json_encode($imagesThumb) . "');</script>";
+                            echo "<script>pData.thumbs = JSON.parse('" . addslashes(json_encode($imagesThumb)) . "');</script>";
                             flush();
                         }
                     }
@@ -304,7 +304,7 @@ class ProductController2 extends Controller
         }
 
         if ($data) {
-            echo "<script>pDataC = JSON.parse('" . json_encode($data) . "');</script>";
+            echo "<script>pDataC = JSON.parse('" . addslashes(json_encode($data)) . "');</script>";
             flush();
         }
 
@@ -406,7 +406,7 @@ class ProductController2 extends Controller
         $uniqueVariants = [];
         $alreadySeenNames = [];
         if($variants){
-            echo "<script>pData.variants = JSON.parse('" . json_encode($variants) . "');</script>";
+            echo "<script>pData.variants = JSON.parse('" . addslashes(json_encode($variants)) . "');</script>";
         }
         foreach ($variants as $variant) {
             $name = $variant['name'];

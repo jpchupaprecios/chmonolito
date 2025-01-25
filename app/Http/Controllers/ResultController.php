@@ -184,6 +184,9 @@ class ResultController extends Controller
         $countParsedElementsFailHtml;*/
         $this->resultParser = new ChapiAmazonResultParser();
         $resultParse = $this->resultParser->parse($cleanHtml, "amazon", $query, false);
+        if($resultParse){
+            echo "<script>resultsC = JSON.parse('" . addslashes(json_encode($resultParse)) . "');</script>";
+        }
 
 
         curl_close($curl);
