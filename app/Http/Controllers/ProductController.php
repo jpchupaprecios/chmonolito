@@ -156,7 +156,7 @@ class ProductController extends Controller
         return $colorsDiv;
     }
 
-    public function index(Request $request, $id, $vendor)
+    public function index(Request $request, $id, $vendor, $csi = null)
     {
         $product = false;
         //$product = Product::where("product_id", $id)->where("vendor", $vendor)->first();
@@ -184,33 +184,37 @@ class ProductController extends Controller
         //$cookie = 'session-id=145-2848617-2390738; i18n-prefs=USD; ...'; // tu cookie
         //$scrapingSession = ScrapingSession::where("client_session_id", $client_session_id)->first();
         $cookie = '';
-        $scrapingSession = ScrapingSession::where("client_session_id", $csi)->first();
+        $scrapingSession = null;
 
-        if($scrapingSession){
-            $cookie = ($scrapingSession->amazon_cookie) ? $scrapingSession->amazon_cookie : "";
-            self::$userAgent = ($scrapingSession->user_agent) ? $scrapingSession->user_agent : "";
-        }
+        if($csi){
+            $scrapingSession = ScrapingSession::where("client_session_id", $csi)->first();
 
-        if(!$scrapingSession) {
-            $scrapingSession = new ScrapingSession();
-            $cookies = SymfonyPanther::getCookies($url);
-            if($cookies){
-                $userAgent = $cookies["user-agent"];
-                $cookies = $cookies["cookies"];
+            if($scrapingSession){
+                $cookie = ($scrapingSession->amazon_cookie) ? $scrapingSession->amazon_cookie : "";
+                self::$userAgent = ($scrapingSession->user_agent) ? $scrapingSession->user_agent : "";
+            }
+
+            if(!$scrapingSession) {
+                $scrapingSession = new ScrapingSession();
+                $cookies = SymfonyPanther::getCookies($url);
+                if($cookies){
+                    $userAgent = $cookies["user-agent"];
+                    $cookies = $cookies["cookies"];
 
 
-                $scrapingSession->client_session_id = $csi;
-                $cookieStr = "";
-                foreach($cookies as $cookie){
-                    $cookieStr .= $cookie . ";";
-                }
-                $scrapingSession->amazon_cookie = $cookieStr;
-                $scrapingSession->user_agent = $userAgent;
-                $scrapingSession->save();
+                    $scrapingSession->client_session_id = $csi;
+                    $cookieStr = "";
+                    foreach($cookies as $cookie){
+                        $cookieStr .= $cookie . ";";
+                    }
+                    $scrapingSession->amazon_cookie = $cookieStr;
+                    $scrapingSession->user_agent = $userAgent;
+                    $scrapingSession->save();
 
-                if($scrapingSession){
-                    $cookie = ($scrapingSession->amazon_cookie) ? $scrapingSession->amazon_cookie : "";
-                    self::$userAgent = ($scrapingSession->user_agent) ? $scrapingSession->user_agent : "";
+                    if($scrapingSession){
+                        $cookie = ($scrapingSession->amazon_cookie) ? $scrapingSession->amazon_cookie : "";
+                        self::$userAgent = ($scrapingSession->user_agent) ? $scrapingSession->user_agent : "";
+                    }
                 }
             }
         }

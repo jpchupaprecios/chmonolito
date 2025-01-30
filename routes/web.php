@@ -63,7 +63,7 @@ Route::get('/api/product/{productId}/{vendor}', [ApiController::class, 'product'
 */
 Route::get('/', [HomeController::class, 'index']);
 Route::get('/results/{csi}', [ResultController::class, 'index']);
-Route::get('/product/{id}/{vendor}', [ProductController::class, 'index']);
+Route::get('/product/{id}/{vendor}/{csi?}', [ProductController::class, 'index']);
 Route::get('/cart', [CartController::class, 'index']);
 Route::get('/checkout', [CheckoutController::class, 'index']);
 Route::get('/success', [CheckoutController::class, 'success']);

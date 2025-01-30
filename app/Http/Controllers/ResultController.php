@@ -190,7 +190,7 @@ class ResultController extends Controller
                 CURLOPT_PROXYUSERPWD   => $proxy['user'] . ':' . $proxy['pass'],
                 CURLOPT_BUFFERSIZE     => 1024,
                 CURLOPT_WRITEFUNCTION  => function ($ch, $chunk) use (&$usedAsins, &$counter, &$bufferLimited, &$global, &$countParsedElements, &$countParsedElementsFail,
-                &$firstValidResponse, &$winnerHandle) {
+                &$firstValidResponse, &$winnerHandle, &$csi) {
                     // Supongamos que parse() retorna un array de productos
                     if ($firstValidResponse) {
                         // Abortamos cualquier handle que no sea el ganador
@@ -210,6 +210,7 @@ class ResultController extends Controller
                         $firstValidResponse = true;
                         // Iteras sobre cada producto y renderizas la vista product.blade.php
                             foreach ($parsedProducts as $parsedProduct){
+                                $parsedProduct["csi"] = $csi;
                                 $productHtml = view('pages.result.components.product', [
                                     'productData' => $parsedProduct
                                 ])->render();
