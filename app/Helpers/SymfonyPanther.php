@@ -7,6 +7,7 @@ use Symfony\Component\Panther\Cookie;
 
 class SymfonyPanther
 {
+    private static $handles;
     public static function run($url, $userAgent, $cookie)
     {
         $client = Client::createChromeClient(
@@ -44,91 +45,74 @@ class SymfonyPanther
             throw new \RuntimeException('No se pudo crear el archivo temporal para cookies.');
         }
 
-        // Configurar cURL
-        $ch = curl_init();
+        // Lista de proxies
+        $proxies = [
+            [
+                'host' => 'dc.oxylabs.io',
+                'port' => 8000,
+                'user' => 'user-chupaprecios_lDWEa-country-US',
+                'pass' => '+Aq1w2e3r4t5'
+            ],
+            [
+                'host' => 'us-pr.oxylabs.io',
+                'port' => 10000,
+                'user' => 'customer-chupaprecios_COPc9_K2KrH',
+                'pass' => '+Aq1w2e3r4t5'
+            ],
+            [
+                'host' => 'pr.oxylabs.io',
+                'port' => 7777,
+                'user' => 'customer-jotapey3_qcf4a-cc-us',
+                'pass' => '+Aq1w2e3r4t5'
+            ],
+            [
+                'host' => 'pr.oxylabs.io',
+                'port' => 7777,
+                'user' => 'customer-jotapey2_Kr8Ew-cc-us',
+                'pass' => '2H5zdvxVQff'
+            ]
+        ];
+
+        // Configuración común para todas las solicitudes
         $userAgent = self::getUserAgent();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HEADER, true);
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true); // Seguir redirecciones
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        $headersParams = [
             'Accept-Encoding: gzip, deflate, br',
             'Accept: */*',
             'Content-Language: es-US',
             'User-Agent: ' . $userAgent,
-        ]);
-        curl_setopt($ch, CURLOPT_COOKIEJAR, $cookieFile); // Guardar cookies en archivo
-        curl_setopt($ch, CURLOPT_COOKIEFILE, $cookieFile); // Usar cookies del archivo
+        ];
 
-        // Ejecutar la solicitud
-        $response = curl_exec($ch);
+        // Función para ejecutar una solicitud multi-cURL
 
-        // Manejar errores
-        if (curl_errno($ch)) {
-            unlink($cookieFile); // Limpiar archivo temporal
-            throw new \RuntimeException('Error en cURL: ' . curl_error($ch));
-        }
-// Obtener solo los encabezados
-        $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
-        $headers = substr($response, 0, $headerSize);
 
-        curl_close($ch);
+        // Primera solicitud: Obtener cookies iniciales
+        $firstResponse = self::executeMultiCurl($url, $proxies, $headersParams, $cookieFile);
 
-        $cookies = [];
+        // Extraer cookies de la primera respuesta
+        $headerSize = curl_getinfo(self::$handles[0], CURLINFO_HEADER_SIZE);
+        $headers = substr($firstResponse, 0, $headerSize);
         preg_match_all('/^Set-Cookie:\s*([^;]*)/mi', $headers, $matches);
-        // Cerrar cURL
+        $cookies = $matches[1];
 
-        foreach ($matches[1] as $cookie) {
-            $cookies[] = $cookie;
-        }
+        // Segunda solicitud: Obtener el $ubid usando las cookies de la primera solicitud
+        $secondResponse = self::executeMultiCurl($url, $proxies, $headersParams, $cookieFile, $cookies);
 
-        // Configurar cURL
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HEADER, true);
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true); // Seguir redirecciones
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Accept-Encoding: gzip, deflate, br',
-            'Accept: */*',
-            'Content-Language: es-US',
-            'User-Agent: ' . $userAgent,
-            'Cookie: ' . implode('; ', $cookies),
-        ]);
-        curl_setopt($ch, CURLOPT_COOKIEJAR, $cookieFile); // Guardar cookies en archivo
-        curl_setopt($ch, CURLOPT_COOKIEFILE, $cookieFile); // Usar cookies del archivo
-
-        // Ejecutar la solicitud
-        $response = curl_exec($ch);
-
-        // Manejar errores
-        if (curl_errno($ch)) {
-            unlink($cookieFile); // Limpiar archivo temporal
-            throw new \RuntimeException('Error en cURL: ' . curl_error($ch));
-        }
-// Obtener solo los encabezados
-        $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
-        $headers = substr($response, 0, $headerSize);
-
-        curl_close($ch);
-
-
+        // Extraer cookies de la segunda respuesta
+        $headerSize = curl_getinfo(self::$handles[0], CURLINFO_HEADER_SIZE);
+        $headers = substr($secondResponse, 0, $headerSize);
         preg_match_all('/^Set-Cookie:\s*([^;]*)/mi', $headers, $matches);
-        // Cerrar cURL
+        $cookies = array_merge($cookies, $matches[1]);
 
-        if(isset($matches[1]) && isset($matches[1][0])){
-            $cookies[] = $matches[1][0];
-        }
-
+        // Buscar la cookie `ubid-main`
         $ubid = null;
-        foreach($cookies as $cookie){
-            if(strpos($cookie, "ubid-main=") !== false){
+        foreach ($cookies as $cookie) {
+            if (strpos($cookie, "ubid-main=") !== false) {
                 $ubid = $cookie;
                 break;
             }
         }
 
-        if(!$ubid){
+        if (!$ubid) {
             return false;
         }
 
@@ -136,28 +120,66 @@ class SymfonyPanther
             "cookies" => $cookies,
             "user-agent" => $userAgent,
         ];
-
-
-    // Configuración de variables de entorno
-        putenv('PANTHER_NO_SANDBOX=1'); // Para evitar problemas con sandbox
-        putenv('PANTHER_CHROME_BINARY=/usr/bin/google-chrome'); // Ruta de Google Chrome
-        putenv('PANTHER_CHROMEDRIVER_BINARY=' . __DIR__ . '/../../drivers/chromedriver'); // Ruta del chromedriver instalado con BDI
-        putenv('DISPLAY=:1');
-
-        $client = Client::createChromeClient('/usr/bin/google-chrome');
-
-        //exec('/usr/bin/google-chrome');
-
-        // Realizar solicitud GET al URL
-        $client->request('GET', $url);
-
-        // Obtener cookies del sitio web
-        $cookies = $client->getCookieJar()->all();
-
-        return $cookies;
     }
 
+    private static function executeMultiCurl($url, $proxies, $headers, $cookieFile, $cookies = [])
+    {
+        $mh = curl_multi_init();
+        self::$handles = [];
 
+        foreach ($proxies as $proxy) {
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_HEADER, true);
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+            curl_setopt($ch, CURLOPT_COOKIEJAR, $cookieFile);
+            curl_setopt($ch, CURLOPT_COOKIEFILE, $cookieFile);
+
+            // Configurar proxy
+            curl_setopt($ch, CURLOPT_PROXY, $proxy['host']);
+            curl_setopt($ch, CURLOPT_PROXYPORT, $proxy['port']);
+            curl_setopt($ch, CURLOPT_PROXYUSERPWD, $proxy['user'] . ':' . $proxy['pass']);
+
+            // Si hay cookies, agregarlas a la solicitud
+            if (!empty($cookies)) {
+                curl_setopt($ch, CURLOPT_COOKIE, implode('; ', $cookies));
+            }
+
+            curl_multi_add_handle($mh, $ch);
+            self::$handles[] = $ch;
+        }
+
+        // Ejecutar las solicitudes en paralelo
+        $running = null;
+        do {
+            curl_multi_exec($mh, $running);
+            curl_multi_select($mh);
+        } while ($running > 0);
+
+        // Recopilar respuestas
+        $response = null;
+        foreach (self::$handles as $ch) {
+            if (curl_errno($ch) === 0) {
+                $response = curl_multi_getcontent($ch);
+                break; // Usar la primera respuesta exitosa
+            }
+        }
+
+        // Cerrar todos los manejadores cURL
+        foreach (self::$handles as $ch) {
+            curl_multi_remove_handle($mh, $ch);
+            curl_close($ch);
+        }
+        curl_multi_close($mh);
+
+        if (!$response) {
+            throw new \RuntimeException('Todos los proxies fallaron.');
+        }
+
+        return $response;
+    }
 
     public static function getUserAgent(): string
     {

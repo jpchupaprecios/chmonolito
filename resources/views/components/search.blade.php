@@ -1,6 +1,7 @@
 <div class="my-8 flex justify-center">
     <!-- En tu formulario -->
-    <form action="/results" class="flex w-full max-w-3xl" method="GET">
+
+    <form id="res-form" action="" class="flex w-full max-w-3xl" method="GET">
         <div class="relative flex-grow">
             <!-- Input de búsqueda -->
             <input
@@ -115,7 +116,11 @@
             <span class="sr-only">Buscar</span>
         </button>
     </form>
-
+    <script>
+        let csi = localStorage.getItem('client_session_id');
+        // modifico mi form con id res-form y le agrego el action "/results/" + csi
+        document.getElementById('res-form').action = "/results/" + csi;
+    </script>
 </div>
 <script>
     // Referencias a los elementos

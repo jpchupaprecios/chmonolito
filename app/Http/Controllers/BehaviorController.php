@@ -30,6 +30,7 @@ class BehaviorController extends Controller
         }
 
         if(!$scrapingSession){
+            $scrapingSession = new ScrapingSession();
             $cookies = SymfonyPanther::getCookies($url);
             if(!$cookies){
                 return false;
@@ -37,7 +38,7 @@ class BehaviorController extends Controller
             $userAgent = $cookies["user-agent"];
             $cookies = $cookies["cookies"];
 
-            $scrapingSession = new ScrapingSession();
+
             $scrapingSession->client_session_id = $client_session_id;
             $cookieStr = "";
             foreach($cookies as $cookie){
