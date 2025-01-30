@@ -104,7 +104,6 @@ class ResultController extends Controller
         $global = "";
         $countParsedElements = 0;
         $countParsedElementsFail = 0;
-        $countParsedElementsFailHtml = "";
 
         // Añadir un padding para evitar buffering
         echo str_repeat(" ", 1024);
@@ -133,10 +132,10 @@ class ResultController extends Controller
             CURLOPT_PROXYUSERPWD => $proxyUser . ':' . $proxyPass, // Proxy authentication
 */
             CURLOPT_BUFFERSIZE => 1024, // Reduce el tamaño del buffer de cURL
-            CURLOPT_WRITEFUNCTION => function ($curl, $chunk) use (&$usedAsins, &$counter, &$bufferLimited, &$global, &$countParsedElements, &$countParsedElementsFail, &$countParsedElementsFailHtml) {
+            CURLOPT_WRITEFUNCTION => function ($curl, $chunk) use (&$usedAsins, &$counter, &$bufferLimited, &$global, &$countParsedElements, &$countParsedElementsFail) {
                 // Supongamos que parse() retorna un array de productos
                 $global .= $chunk;
-                $parsedProducts = AmazonSearchParser::parse($chunk, $usedAsins, $counter, $bufferLimited, $countParsedElements, $countParsedElementsFail, $countParsedElementsFailHtml);
+                $parsedProducts = AmazonSearchParser::parse($chunk, $usedAsins, $counter, $bufferLimited, $countParsedElements, $countParsedElementsFail);
 
                 if ($parsedProducts && is_countable($parsedProducts) && count($parsedProducts) > 0) {
                     // Iteras sobre cada producto y renderizas la vista product.blade.php

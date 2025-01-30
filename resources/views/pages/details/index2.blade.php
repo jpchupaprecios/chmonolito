@@ -88,6 +88,171 @@
 </div>
 <!-- extra-data-tabs -->
 <script>
+    let product = null;
+    let selectedVariants = [];
+    let variants = [];
+    let isLoading = false;
+    let selectedStore = 'amazon'; // Asume un valor por defecto
+    let combinations = [];
+    let combinationSeparator = '';
+    let selectedVariantAsin = '';
+    let isProductLoaded = false;
+
+    const handleVariantChange = (variantName, value, pType, pTarget) => {
+        const type = pType ? pType : 'default';
+        const target = pTarget ? pTarget : null;
+
+        const updatedSelectedVariants = {
+            ...selectedVariants,
+            [variantName]: value
+        };
+
+        let variantSelectedValue = value;
+        let variantSelected = null;
+
+        if (combinations && combinations.length) {
+            variantSelectedValue = null;
+            let optionsSelected = [];
+
+            var selects = document.getElementById("product-variants-wrapper").querySelectorAll(".variant-select");
+            var imgs = document.getElementById("product-variants-wrapper").querySelectorAll(".variant-img-selected img");
+
+            for (let i = 0; selects.length > i; i++) {
+                let select = selects[i];
+                let selectedOption = select.options[select.selectedIndex];
+                let dataid = selectedOption.getAttribute("value");
+                if (dataid) {
+                    optionsSelected.push(dataid);
+                }
+            }
+
+            for (let i = 0; imgs.length > i; i++) {
+                let img = imgs[i];
+                let dataid = img.getAttribute("dataid");
+                if (dataid) {
+                    if (img.getAttribute("group") == target.getAttribute("group")) {
+                        if (target.getAttribute("dataid")) {
+                            dataid = target.getAttribute("dataid");
+                        }
+                    }
+                    optionsSelected.push(dataid);
+                }
+            }
+
+            if (optionsSelected.length) {
+                let allTrimCombinations = getAllTrimCombinations(optionsSelected, combinationSeparator);
+
+                for (let i = 0; i < allTrimCombinations.length; i++) {
+                    variantSelectedValue = getIdInCombinations(allTrimCombinations[i]);
+                    if (variantSelectedValue) {
+                        if (selectedStore == 'ebay') {
+                            variantSelectedValue = asin + '|' + variantSelectedValue;
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (variantSelectedValue) {
+            setSelectedVariantAsin(variantSelectedValue);
+            updateProduct(variantSelectedValue, variantSelected);
+        }
+
+        selectedVariants = updatedSelectedVariants;
+    };
+
+    const updateProduct = async (asin, parentProductId) => {
+        isLoading = true;
+        isProductLoaded = false;
+        //const apiUrl = `/rest/V1/chupaprecios/productdetail/?asin=${asin}&selected_store=${selectedStore}`;
+        const apiUrl = `http://laravel11.local/api/product/${parentProductId}/amazon/direct`;
+
+        const requestOptions = {
+            method: 'GET',
+            headers: {
+                "Content-Type": "application/json",
+            }
+        };
+
+        const urls = [apiUrl]; // Tres llamadas al mismo endpoint para tomar la más rápida
+        //const urls = [apiUrl, apiUrl, apiUrl, apiUrl]; // Tres llamadas al mismo endpoint para tomar la más rápida
+        try {
+            const response = await Promise.race(urls.map(url => fetch(url, requestOptions)));
+            const data = await response.json();
+
+            if (data && data.length > 0) {
+                const result = data[0].data;
+                if (result) {
+                    setProduct(result);
+                    combinationSeparator = result.combination_separator;
+                    combinations = result.combinations;
+                    if (typeof result.variants !== "undefined") {
+                        if (typeof result.asin !== "undefined" && result.asin) {
+                            selectedVariantAsin = result.asin;
+                        } else if (typeof result.productId !== "undefined" && result.productId) {
+                            selectedVariantAsin = result.productId;
+                        }
+
+                        const initialVariants = initializeSelectedVariants(result.variants);
+                        selectedVariants = initialVariants;
+                    }
+                }
+            } else {
+                console.error('No data found for product.');
+            }
+        } catch (error) {
+            console.error("Hubo un error buscando los productos:", error);
+        } finally {
+            isLoading = false;
+            isProductLoaded = true;
+        }
+    };
+
+    // Funciones auxiliares que necesitarás implementar o definir
+    function getAllTrimCombinations(array, combinationSeparator) {
+        function permute(arr) {
+            if (arr.length === 0) return [[]];
+            let result = [];
+
+            for (let i = 0; i < arr.length; i++) {
+                let rest = permute(arr.slice(0, i).concat(arr.slice(i + 1)));
+                for (let permutation of rest) {
+                    result.push([arr[i]].concat(permutation));
+                }
+            }
+
+            return result;
+        }
+
+        let permutations = permute(array);
+
+        let result = permutations.map(permutation => permutation.join(combinationSeparator));
+
+        return result;
+    }
+
+    function getIdInCombinations(comb) {
+        for(let i = 0; i < combinations.length; i++) {
+            let combination = combinations[i];
+            let variantKeys = combination.variant_key
+            //let combinationsKeys = variantKeys.split(combinationSeparator);
+            if(comb === variantKeys){
+                return combination.variant_sku;
+            }
+        }
+
+        return false;
+    }
+
+    function setProduct(product) {
+        // Implementa la lógica para establecer el producto
+    }
+
+    function initializeSelectedVariants(variants) {
+        // Implementa la lógica para inicializar las variantes seleccionadas
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         // Selecciona la imagen principal
         const mainImage = document.querySelector('.product-data-image');

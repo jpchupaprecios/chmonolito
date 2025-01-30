@@ -156,7 +156,8 @@ class ProductController extends Controller
 
     public function index(Request $request, $id, $vendor)
     {
-        $product = Product::where("product_id", $id)->where("vendor", $vendor)->first();
+        $product = false;
+        //$product = Product::where("product_id", $id)->where("vendor", $vendor)->first();
 
 
         // Configura las cabeceras para streaming
@@ -236,7 +237,7 @@ class ProductController extends Controller
         $buffer             = '';  // si tu parser necesita un buffer global
 
         if(!$product){
-            $product = new Product();
+            //$product = new Product();
             // Construimos un handle por cada proxy
             foreach ($proxies as $proxy) {
                 $curl = curl_init($url);
@@ -372,16 +373,16 @@ class ProductController extends Controller
                             // Vemos qué tipo de dato se ha extraído
                             if (isset($parsedProducts['price'])) {
                                 $price = $parsedProducts['price'];
-                                $product->price = $price;
+                                ////$product->price = $price;
                                 echo "<script>
-                                pData.price = '" . addslashes($price) . "';
+                                pData.price = " . addslashes($price) . ";
                                 document.querySelector('.price-shimmer').style.display = 'none';
                                 document.querySelector('.product-data-price').textContent = '$ " . addslashes($price) . " MXN';
                             </script>";
                             }
                             if (isset($parsedProducts['title'])) {
                                 $title = $parsedProducts['title'];
-                                $product->title = $title;
+                                //$product->title = $title;
                                 echo "<script>
                                 pData.title = '" . addslashes($title) . "';
                                 document.querySelector('.title-shimmer-wrapper').style.display = 'none';
@@ -391,7 +392,7 @@ class ProductController extends Controller
                             if (isset($parsedProducts['image'])) {
 
                                 $imageUrl = $parsedProducts['image'];
-                                $product->image = $imageUrl;
+                                //$product->image = $imageUrl;
                                 echo "<script>
                                 pData.image = '" . addslashes($imageUrl) . "';
                                 const imgEl        = document.querySelector('.product-data-image');
@@ -404,7 +405,7 @@ class ProductController extends Controller
                             }
                             if (isset($parsedProducts['rating'])) {
                                 $rating      = floatval($parsedProducts['rating']);
-                                $product->rating = $rating;
+                                //$product->rating = $rating;
                                 $fullStars   = floor($rating);
                                 $decimalPart = $rating - $fullStars;
                                 if ($decimalPart > 0) {
@@ -467,7 +468,7 @@ class ProductController extends Controller
 
                                 $escapedStarsHtml = json_encode($starsHtml);
                                 echo "<script>
-                                pData.rating = '" . addslashes($rating) . "';
+                                pData.rating = " . addslashes($rating) . ";
                                 document.querySelector('.rating-stars-wrapper').style.display = 'flex';
                                 document.querySelector('.color-shimmer-options').style.display = 'none';
                                 document.querySelector('.product-data-rating').textContent = '" . addslashes($rating) . "';
@@ -519,9 +520,9 @@ class ProductController extends Controller
 
             curl_multi_close($multiCurl);
 
-            $product->product_id = $id;
-            $product->vendor = $vendor;
-            $product->save();
+            //$product->product_id = $id;
+            //$product->vendor = $vendor;
+            //$product->save();
 
             if ($global) {
 
@@ -529,7 +530,7 @@ class ProductController extends Controller
             $chapiAmazonProductDetailParser = new ChapiAmazonProductDetailParser($cookie);
             $data = $chapiAmazonProductDetailParser->parse(["result" => $global], "amazon", $id, $cookie);
 
-            $product->save();
+            //$product->save();
 
             $dom = new DOMDocument();
             @$dom->loadHTML($global);
@@ -540,24 +541,30 @@ class ProductController extends Controller
                 $data->variants = $variants;
             }
             if ($data) {
-                echo "<script>pDataC = JSON.parse('" . json_encode($data) . "');</script>";
+                echo "<script>product = JSON.parse('" . addslashes(json_encode($data)) . "');</script>";
+                echo "<script>
+                combinations = product.combination_separator;
+                combinationSeparator = product.combinations;
+                </script>";
+                echo "<script>parsepDataC(pData, product);</script>";
             }
         }
 
         }else{
+            /*
                 $price = $product->price;
                 echo "<script>
                                 pData.price = '" . addslashes($price) . "';
                                 document.querySelector('.price-shimmer').style.display = 'none';
                                 document.querySelector('.product-data-price').textContent = '$ " . addslashes($price) . " MXN';
                             </script>";
-                $title = $product->title;
+                $title = //$product->title;
                 echo "<script>
                                 pData.title = '" . addslashes($title) . "';
                                 document.querySelector('.title-shimmer-wrapper').style.display = 'none';
                                 document.querySelector('.product-data-title').textContent = '" . addslashes($title) . "';
                             </script>";
-                $imageUrl = $product->image;
+                $imageUrl = //$product->image;
                 echo "<script>
                                 pData.image = '" . addslashes($imageUrl) . "';
                                 const imgEl        = document.querySelector('.product-data-image');
@@ -567,7 +574,7 @@ class ProductController extends Controller
                                 imgEl.src = '" . addslashes($imageUrl) . "';
                                 imgEl.alt = 'Imagen del producto';
                             </script>";
-                $rating = $product->rating;
+                $rating = //$product->rating;
                 $fullStars   = floor($rating);
                 $decimalPart = $rating - $fullStars;
                 if ($decimalPart > 0) {
@@ -636,6 +643,7 @@ class ProductController extends Controller
                                 document.querySelector('.product-data-rating').textContent = '" . addslashes($rating) . "';
                                 document.querySelector('.rating-stars-wrapper').innerHTML = $escapedStarsHtml;
                             </script>";
+            */
         }
 
         // Cerramos el HTML, footer y flush final

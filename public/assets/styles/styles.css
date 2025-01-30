@@ -268,7 +268,11 @@ body {
 }
 
 .img-product{
-    max-height: 200px;
+    max-height: 180px;
+    padding: 15px;
+    display: flex;
+    justify-content: center;
+    margin: auto;
 }
 .product-wrapper{
 

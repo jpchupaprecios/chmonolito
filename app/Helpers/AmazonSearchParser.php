@@ -24,7 +24,7 @@ class AmazonSearchParser
         }
     }
 
-    public static function parse($chunk, &$usedAsins, &$counter, &$bufferLimited, &$countParsedElements, &$countParsedElementsFail, &$countParsedElementsFailHtml)
+    public static function parse($chunk, &$usedAsins, &$counter, &$bufferLimited, &$countParsedElements, &$countParsedElementsFail)
     {
         //if (strpos($chunk, 'data-asin="B') !== false) {
         //    $productNodes = $xpath->query('//div[@data-asin and string-length(@data-asin) > 0]');
@@ -114,7 +114,6 @@ class AmazonSearchParser
                     }
                 }else{
                     if($bufferLimited){
-                        $countParsedElementsFailHtml .= $html;
                         $countParsedElementsFail++;
                     }
                 }

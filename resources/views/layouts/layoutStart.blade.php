@@ -27,6 +27,151 @@
         let pData = {
             variants:[]
         };
+        const differences = {};
+
+        function fixData(){
+            if(typeof differences.price !== "undefined" ){
+                //selecciono el elemento con clase .product-data-price
+                const priceElement = document.querySelector('.product-data-price');
+                document.querySelector('.price-shimmer').style.display = 'none';
+                // actualizo el contenido del elemento por el de differences.price
+                priceElement.textContent = differences.price;
+                console.log("price updated");
+            }
+
+            //lo mismo para el elemento img con clase .product-data-image cuando differences.image no sea undefined
+            if(typeof differences.image !== "undefined" ){
+                const imageElement = document.querySelector('.product-data-image');
+                document.querySelector('.image-placeholder').style.display = 'none';
+                imageElement.style.display = 'block';
+                imageElement.src = differences.image;
+                console.log("image updated");
+            }
+
+            //lo mismo pero para differences.title
+            if(typeof differences.title !== "undefined" ){
+                const titleElement = document.querySelector('.product-data-title');
+                document.querySelector('.title-shimmer-wrapper').style.display = 'none';
+                titleElement.textContent = differences.title;
+                console.log("title updated");
+            }
+
+            if(typeof differences.variants !== "undefined" ){
+                console.log("variants updated");
+            }
+
+            if (typeof differences.rating !== "undefined") {
+                if (product.rating === 0) {
+                    document.querySelector('.color-shimmer-options').style.display = 'none';
+                    console.log("rating none");
+                }else{
+                    // Lógica para generar el HTML de las estrellas en JavaScript
+                    const rating = parseFloat(differences.rating);
+                    let fullStars = Math.floor(rating);
+                    const decimalPart = rating - fullStars;
+                    let halfStar = 0;
+
+                    if (decimalPart > 0) {
+                        if (decimalPart >= 0.6) {
+                            fullStars++;
+                        } else {
+                            halfStar = 1;
+                        }
+                    }
+
+                    if (fullStars > 5) {
+                        fullStars = 5;
+                        halfStar = 0;
+                    }
+
+                    const emptyStars = 5 - (fullStars + halfStar);
+
+                    let starsHtml = "";
+
+                    // Generar estrellas llenas
+                    for (let i = 0; i < fullStars; i++) {
+                        starsHtml += `<svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                </svg>`;
+                    }
+
+                    // Generar media estrella si es necesario
+                    if (halfStar) {
+                        starsHtml += `<svg class="w-5 h-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                    <defs>
+                        <linearGradient id="half-star">
+                            <stop offset="50%" stop-color="#facc15"/>
+                            <stop offset="50%" stop-color="#d1d5db"/>
+                        </linearGradient>
+                    </defs>
+                    <path fill="url(#half-star)" d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                </svg>`;
+                    }
+
+                    // Generar estrellas vacías
+                    for (let i = 0; i < emptyStars; i++) {
+                        starsHtml += `<svg class="w-5 h-5 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                </svg>`;
+                    }
+
+                    // Agregar el texto del rating
+                    starsHtml += `<span class="ml-2 text-gray-600 product-data-rating">${rating}</span>`;
+
+                    // Seleccionar el contenedor de las estrellas
+                    const ratingStarsWrapper = document.querySelector('.rating-stars-wrapper');
+                    document.querySelector('.rating-stars-wrapper').style.display = 'flex';
+
+                    // Actualizar el contenido del contenedor con el nuevo HTML
+                    ratingStarsWrapper.innerHTML = starsHtml;
+                    console.log("rating updated");
+                }
+            }
+        }
+
+        function parsepDataC(pData, d) {
+
+            // Comparar atributos principales
+            const mainAttributes = ['title', 'image', 'price', 'rating'];
+            mainAttributes.forEach(attr => {
+                if (pData[attr] !== d[attr]) {
+                    differences[attr] = d[attr];
+                }
+            });
+
+            // Comparar variantes
+            if (pData.variants && d.variants) {
+                differences.variants = [];
+
+                const pDataVariantsMap = new Map(pData.variants.map(v => [v.name, v]));
+                const dVariantsMap = new Map(d.variants.map(v => [v.name, v]));
+
+                // Recorrer las variantes de d
+                d.variants.forEach(dVariant => {
+                    const pDataVariant = pDataVariantsMap.get(dVariant.name);
+
+                    if (!pDataVariant) {
+                        // Si la variante no existe en pData, agregarla al tercer objeto
+                        differences.variants.push(dVariant);
+                    } else {
+                        // Si la variante existe, comparar las options
+                        const optionsDiff = dVariant.options.filter(dOption => {
+                            return !pDataVariant.options.some(pOption => pOption.sku === dOption.sku);
+                        });
+
+                        if (optionsDiff.length > 0) {
+                            // Si hay options diferentes, agregar la variante con las options que faltan
+                            differences.variants.push({
+                                ...dVariant,
+                                options: optionsDiff
+                            });
+                        }
+                    }
+                });
+            }
+
+            fixData();
+        }
     </script>
     <style type="text/tailwindcss">@layer base {
             * {

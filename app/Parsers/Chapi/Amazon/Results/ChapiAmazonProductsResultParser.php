@@ -33,7 +33,7 @@ final class ChapiAmazonProductsResultParser
 
             $product = ChapiAmazonProductResultParser::parse($productElement, $vendor, $position);
 
-            if ($product->price) {
+            if (isset($product->price) && $product->price) {
                 $results[] = $product;
                 $position++;
             }

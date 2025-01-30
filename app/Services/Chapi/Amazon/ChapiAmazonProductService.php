@@ -48,6 +48,7 @@ final class ChapiAmazonProductService implements ProductServiceInterface
         $ci = ""
 	): ProductDetails {
         $this->cookie = "";//$this->cookieService->getCookie();//'session-id=140-4885816-6428851;session-id-time=2082787201l;ubid-main=130-9580061-8070705';
+        $this->user_agent = "";
         if($ci){
             $scrapingSession = ScrapingSession::where('client_session_id', $ci)->first();
             if($scrapingSession){
