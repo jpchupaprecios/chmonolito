@@ -95,7 +95,7 @@ class ResultController extends Controller
         $url = "https://www.amazon.com/s?k=" . urlencode($query) . "&language=es_US&page={$page}";
         $cookieName = date('Y-m-d') . '-amazon';
         $cookiePath = storage_path(self::COOKIE_PATH . $cookieName . '.txt');
-        $cookie = 'skin=noskin; session-id=133-0374827-0627531; session-id-time=2082787201l; i18n-prefs=USD; ubid-main=132-3903942-5106812; session-token=QIlYNwirLg5xMnGixDgE37MZB5bKMZDTq2aINLM163f0CDiDnHrlWWaiZJEa7/iSbMqHY8enYF3pXhTBv26fzqliS3TTLAB61ZkxCdtdqYEZ31+dV4AB0Mio+UKGjKqjTmf1TDAR3dX1BTMW9qb6uhhqJMLQBEEenBQC74RpCIKbl5Oi081EkNiREVOkzOjlglnexlxhBNbTvRhxf7Qw2wdwJloOe+b7cG0aBFCbNQxlcJ5tOFvfd+pMKXeqPclmMHeIQGMDqc7QONDqI3YvXV6f/s5nkXE4eVLDHklQwTfnZSFQdseDtM6dkkXp+erdTTMfIHMiaBjoaWGq3SAYBkDB6+F5iFgV; csm-hit=tb:s-AZDX3NKC7W0Z9XPN7W71|1735126737193&t:1735126737289&adb:adblk_no; amp_389c1b=3961e650-93a6-45e8-9540-eca24b1e2495...1ifupplbe.1ifuppoik.0.0.0';
+        $cookie = '';
         $scrapingSession = ScrapingSession::where("client_session_id", $csi)->first();
 
         if($scrapingSession){
@@ -141,69 +141,131 @@ class ResultController extends Controller
         // Añadir un padding para evitar buffering
         echo str_repeat(" ", 1024);
         flush();
-        $proxyHost = env('OXYLABS_PROXY');
-        $proxyPort = env('OXULABS_PORT');
-        $proxyUser = env('OXYLABS_USER_US');
-        $proxyPass = env('OXYLABS_PASS');
-        // Configurar cURL
-        $curl = curl_init($url);
+        $proxies = [
+            [
+                'host' => 'dc.oxylabs.io',
+                'port' => 8000,
+                'user' => 'user-chupaprecios_lDWEa-country-US',
+                'pass' => '+Aq1w2e3r4t5'
+            ],
+            [
+                'host' => 'us-pr.oxylabs.io',
+                'port' => 10000,
+                'user' => 'customer-chupaprecios_COPc9_K2KrH',
+                'pass' => '+Aq1w2e3r4t5'
+            ],
+            [
+                'host' => 'pr.oxylabs.io',
+                'port' => 7777,
+                'user' => 'customer-jotapey3_qcf4a-cc-us',
+                'pass' => '+Aq1w2e3r4t5'
+            ],
+            [
+                'host' => 'pr.oxylabs.io',
+                'port' => 7777,
+                'user' => 'customer-jotapey2_Kr8Ew-cc-us',
+                'pass' => '2H5zdvxVQff'
+            ]
+        ];
+        $multiCurl          = curl_multi_init();
+        $handles            = [];
+        $winnerHandle       = null;
+        $firstValidResponse = false;
+        foreach ($proxies as $proxy) {
+            $curl = curl_init($url);
+            curl_setopt_array($curl, []);
 
-        /**/
-        curl_setopt_array($curl, [
-            CURLOPT_HTTPHEADER => self::getHeaders($cookie),
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_RETURNTRANSFER => false, // Deshabilitar retorno automático.
-            CURLOPT_COOKIEFILE => $cookiePath,
-            CURLOPT_COOKIEJAR => $cookiePath,
-            CURLOPT_USERAGENT => self::getUserAgent(),
-            CURLOPT_TIMEOUT => 30,
-            CURLOPT_CONNECTTIMEOUT => 5,
-            CURLOPT_ENCODING => '',
-
-            CURLOPT_PROXY => 'dc.oxylabs.io',
-            CURLOPT_PROXYPORT => 8000, // Proxy port
-            CURLOPT_PROXYUSERPWD => 'user-chupaprecios_lDWEa-country-US' . ':' . '+Aq1w2e3r4t5', // Proxy authentication
-
-            CURLOPT_BUFFERSIZE => 1024, // Reduce el tamaño del buffer de cURL
-            CURLOPT_WRITEFUNCTION => function ($curl, $chunk) use (&$usedAsins, &$counter, &$bufferLimited, &$global, &$countParsedElements, &$countParsedElementsFail) {
-                // Supongamos que parse() retorna un array de productos
-                $global .= $chunk;
-                $parsedProducts = AmazonSearchParser::parse($chunk, $usedAsins, $counter, $bufferLimited, $countParsedElements, $countParsedElementsFail);
-
-                if ($parsedProducts && is_countable($parsedProducts) && count($parsedProducts) > 0) {
-                    // Iteras sobre cada producto y renderizas la vista product.blade.php
-                        foreach ($parsedProducts as $parsedProduct){
-                            $productHtml = view('pages.result.components.product', [
-                                'productData' => $parsedProduct
-                            ])->render();
+            curl_setopt_array($curl, [
+                CURLOPT_HTTPHEADER     => self::getHeaders($cookie),
+                CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_RETURNTRANSFER => false, // Deshabilita retorno automático
+                CURLOPT_COOKIEFILE     => $cookiePath,
+                CURLOPT_COOKIEJAR      => $cookiePath,
+                CURLOPT_USERAGENT      => self::getUserAgent(),
+                CURLOPT_TIMEOUT        => 30,
+                CURLOPT_CONNECTTIMEOUT => 5,
+                CURLOPT_ENCODING       => '',
+                CURLOPT_PROXY          => $proxy['host'],
+                CURLOPT_PROXYPORT      => $proxy['port'],
+                CURLOPT_PROXYUSERPWD   => $proxy['user'] . ':' . $proxy['pass'],
+                CURLOPT_BUFFERSIZE     => 1024,
+                CURLOPT_WRITEFUNCTION  => function ($ch, $chunk) use (&$usedAsins, &$counter, &$bufferLimited, &$global, &$countParsedElements, &$countParsedElementsFail,
+                &$firstValidResponse, &$winnerHandle) {
+                    // Supongamos que parse() retorna un array de productos
+                    if ($firstValidResponse) {
+                        // Abortamos cualquier handle que no sea el ganador
+                        if ($ch !== $winnerHandle) {
+                            return 0;
                         }
+                    }
 
 
-                        echo "<script>document.querySelector('#product-container')
-    .insertAdjacentHTML('beforeend', `" . addslashes($productHtml) . "` );</script>";
+                    $global .= $chunk;
+                    $parsedProducts = AmazonSearchParser::parse($chunk, $usedAsins, $counter, $bufferLimited, $countParsedElements, $countParsedElementsFail);
+
+                    if ($parsedProducts && is_countable($parsedProducts) && count($parsedProducts) > 0) {
+                        if (!$winnerHandle) {
+                            $winnerHandle = $ch;
+                        }
+                        $firstValidResponse = true;
+                        // Iteras sobre cada producto y renderizas la vista product.blade.php
+                            foreach ($parsedProducts as $parsedProduct){
+                                $productHtml = view('pages.result.components.product', [
+                                    'productData' => $parsedProduct
+                                ])->render();
+                            }
+
+
+                            echo "<script>document.querySelector('#product-container')
+        .insertAdjacentHTML('beforeend', `" . addslashes($productHtml) . "` );</script>";
+                            flush();
+
+
+
+                        // Agregas un pequeño separador que ayude al navegador a "pintar"
+                        echo "<!-- chunk -->";
+                        echo str_repeat(" ", 1024);
                         flush();
+                    }
 
-
-
-                    // Agregas un pequeño separador que ayude al navegador a "pintar"
-                    echo "<!-- chunk -->";
-                    echo str_repeat(" ", 1024);
-                    flush();
+                    // IMPORTANTE: devolver el número de bytes procesados,
+                    // para que cURL sepa que todo se manejó bien.
+                    return strlen($chunk);
                 }
 
-                // IMPORTANTE: devolver el número de bytes procesados,
-                // para que cURL sepa que todo se manejó bien.
-                return strlen($chunk);
-            }
-
-        ]);
+            ]);
+            curl_multi_add_handle($multiCurl, $curl);
+            $handles[] = $curl;
+        }
         /**/
 
-        curl_exec($curl);
+        do {
+            $status = curl_multi_exec($multiCurl, $active);
+            // Opcionalmente un pequeño timeout en select para no bloquear mucho
+            curl_multi_select($multiCurl, 0.2);
 
-        if (curl_errno($curl)) {
-            echo "<p>Error: " . curl_error($curl) . "</p>";
+            // Si ya hay un handle ganador
+            if ($firstValidResponse && $winnerHandle) {
+                // Quitar del multiCurl todos los demás
+                foreach ($handles as $curl) {
+                    if ($curl !== $winnerHandle) {
+                        curl_multi_remove_handle($multiCurl, $curl);
+                        curl_close($curl);
+                    }
+                }
+                // Dejamos en $handles solo el ganador
+                $handles = [$winnerHandle];
+                // No hacemos break, para terminar de leer el HTML completo
+            }
+        } while ($active && $status == CURLM_OK);
+
+        // Cerrar el handle final
+        foreach ($handles as $curl) {
+            curl_multi_remove_handle($multiCurl, $curl);
+            curl_close($curl);
         }
+
+        curl_multi_close($multiCurl);
 
         $cleanHtml = self::repairHtml($global);
         /*$dom = new DOMDocument();

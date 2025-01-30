@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\AmazonProductParser;
+use App\Helpers\SymfonyPanther;
 use App\Models\ScrapingSession;
 use App\Parsers\Chapi\Amazon\Product\Variants\ChapiAmazonVariantsParser;
 use App\Services\CookieService;
@@ -14,6 +15,7 @@ use App\Models\Product;
 use App\Parsers\Chapi\Amazon\Complete\Product\ChapiAmazonProductDetailParser;
 class ProductController extends Controller
 {
+    private static $userAgent;
     protected const COOKIE_PATH = 'app/';
 
     private function showLayout(){
@@ -181,7 +183,37 @@ class ProductController extends Controller
         $cookiePath = storage_path(self::COOKIE_PATH . $cookieName . '.txt');
         //$cookie = 'session-id=145-2848617-2390738; i18n-prefs=USD; ...'; // tu cookie
         //$scrapingSession = ScrapingSession::where("client_session_id", $client_session_id)->first();
-        $cookie = "";
+        $cookie = '';
+        $scrapingSession = ScrapingSession::where("client_session_id", $csi)->first();
+
+        if($scrapingSession){
+            $cookie = ($scrapingSession->amazon_cookie) ? $scrapingSession->amazon_cookie : "";
+            self::$userAgent = ($scrapingSession->user_agent) ? $scrapingSession->user_agent : "";
+        }
+
+        if(!$scrapingSession) {
+            $scrapingSession = new ScrapingSession();
+            $cookies = SymfonyPanther::getCookies($url);
+            if($cookies){
+                $userAgent = $cookies["user-agent"];
+                $cookies = $cookies["cookies"];
+
+
+                $scrapingSession->client_session_id = $csi;
+                $cookieStr = "";
+                foreach($cookies as $cookie){
+                    $cookieStr .= $cookie . ";";
+                }
+                $scrapingSession->amazon_cookie = $cookieStr;
+                $scrapingSession->user_agent = $userAgent;
+                $scrapingSession->save();
+
+                if($scrapingSession){
+                    $cookie = ($scrapingSession->amazon_cookie) ? $scrapingSession->amazon_cookie : "";
+                    self::$userAgent = ($scrapingSession->user_agent) ? $scrapingSession->user_agent : "";
+                }
+            }
+        }
 
         // Variables que usaremos para parsear
         $datas = [
@@ -901,6 +933,9 @@ class ProductController extends Controller
 
     public static function getUserAgent(): string
     {
+        if(self::$userAgent){
+            return self::$userAgent;
+        }
         $os = [
             'Macintosh; Intel Mac OS X 10_15_7',
             'Macintosh; Intel Mac OS X 10_15_5',
