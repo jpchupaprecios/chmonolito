@@ -47,9 +47,9 @@ class AmazonSearchParser
 
             if(count($productNodes) < $count){
                 $a = 1;
-                $a = 2;
-                $a = 3;
-                $a = 4;
+
+
+
             }
 
             foreach($productNodes as $productNode){
@@ -84,8 +84,16 @@ class AmazonSearchParser
                 $priceElement = $productXPath->query(
                     './/span[contains(@class, "a-price")]/span[contains(@class, "a-offscreen")]',
                 );
+                //data-cy="secondary-offer-recipe" .a-color-base
 
                 $price = 0;
+                if(count($priceElement)){
+                    $priceElement = $priceElement->item(0);
+                    $price = self::parsePrice($priceElement->textContent);
+                }
+                $priceElement = $productXPath->query(
+                    '//*[@data-cy="secondary-offer-recipe"]//*[contains(@class, "a-color-base")]',
+                );
                 if(count($priceElement)){
                     $priceElement = $priceElement->item(0);
                     $price = self::parsePrice($priceElement->textContent);
@@ -98,7 +106,7 @@ class AmazonSearchParser
                     $productId = $node->nodeValue;
                 }
 
-                if($price && $image && $productId){
+                if($price && $image && $productId && $title){
                     if(!in_array($productId, $usedAsins)){
                         $usedAsins[] = $productId;
 
