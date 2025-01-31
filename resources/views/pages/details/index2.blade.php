@@ -182,6 +182,8 @@
         //const urls = [apiUrl, apiUrl, apiUrl, apiUrl]; // Tres llamadas al mismo endpoint para tomar la más rápida
         try {
             toogleShimmers(true);
+            document.getElementById('color-options').style.display = 'none';
+            document.getElementById('selects').style.display = 'none';
             const response = await Promise.race(urls.map(url => fetch(url, requestOptions)));
             const data = await response.json();
 
@@ -189,6 +191,104 @@
                 toogleShimmers(false);
                 const result = data.data;
                 if (result) {
+                    if(typeof result.variants !== "undefined" && result.variants !== null) {
+
+
+                        const colorSection = document.querySelector('#colorSection .flex.space-x-2');
+
+// 1. Eliminamos los <img> actuales
+                        if (colorSection) {
+                            colorSection.innerHTML = '';
+                        }
+
+// 2. Iteramos las variantes
+                        for (var i = 0; i < result.variants.length; i++) {
+                            let variant = result.variants[i];
+                            let title = variant.title;
+
+                            if (variant.type === 'image') {
+                                document.getElementById('color-options').style.display = 'block';
+
+                                // En este punto, si quieres, puedes borrar también lo que tenga colorOptions
+                                // pero sobre todo elimina solo si es necesario
+                                let colorOptions = document.getElementById('color-options');
+                                colorOptions.innerHTML = '';
+                                let imgHtml = "";
+                                variantSelected = null;
+                                for (var j = 0; j < variant.options.length; j++) {
+                                    let option = variant.options[j];
+
+                                    const selected = option.selected ? 'ring-2 ring-offset-2 ring-blue-500' : '';
+
+                                    if(option.selected){
+                                        variantSelected = option.sku;
+                                    }
+
+                                    let classSelected = selected ? 'selected-variant' : '';
+
+                                    // Construir el HTML de la imagen
+                                    imgHtml += `
+        <img
+          data-sku="${option.sku}"
+          class="${classSelected} color-button w-16 border-2 focus:outline-none focus:ring-2 focus:ring-offset-2 border-gray-300 ${selected}"
+          src="${option.img}"
+        />
+      `;
+
+                                    // Agregamos este string al contenedor
+                                }
+                                if(imgHtml){
+                                    imgHtml = `
+                                        <div class="mb-4" id="colorSection">
+                                            <h3 class="font-semibold mb-2">` + title + `:</h3>
+                                            <div class="flex space-x-2">
+                                                ` + imgHtml + `
+                                            </div>
+                                            <input type="hidden" id="colorInput" name="color" value="` + variantSelected + `">
+                                        </div>
+                                    `;
+                                    document.getElementById('color-options').innerHTML = imgHtml;
+
+                                    // Tomamos todos los botones de color
+                                    const colorButtons = document.querySelectorAll(".color-button");
+                                    // Tomamos el input oculto (si lo usamos)
+                                    const hiddenColorInput = document.getElementById("colorInput");
+
+                                    // Función que marca un botón como seleccionado
+                                    function setSelectedColor(button) {
+                                        // 1. Quitamos el “anillo” (ring) de todos los botones
+                                        colorButtons.forEach((btn) => {
+                                            btn.classList.remove("ring-2", "ring-offset-2", "ring-blue-500");
+                                        });
+                                        // 2. Agregamos el anillo al botón clicado
+                                        button.classList.add("ring-2", "ring-offset-2", "ring-blue-500");
+
+                                        // 3. Actualizamos el valor del input oculto
+                                        if (hiddenColorInput) {
+                                            hiddenColorInput.value = button.dataset.color;
+                                        }
+
+                                        const chosenAsin = button.getAttribute("data-sku")
+                                        if (chosenAsin) {
+                                            selectedVariantAsin = chosenAsin;
+                                            updateProduct(chosenAsin, chosenAsin);
+                                        }
+                                    }
+
+                                    // Asignamos el evento click a cada botón
+                                    colorButtons.forEach((btn, index) => {
+                                        btn.addEventListener("click", () => {
+                                            setSelectedColor(btn);
+                                        });
+                                    });
+                                }
+                            } else {
+                                // Otros tipos de variante
+                            }
+                        }
+
+
+                    }
                     if(typeof result.image !== "undefined" && result.image !== null) {
                         const imageElement = document.querySelector('.product-data-image');
                         imageElement.src = result.image;
@@ -249,7 +349,7 @@
 
                         if(typeof result.score !== "undefined" && result.score !== null) {
                             // Agregar el texto del rating
-                            starsHtml += `<span class="ml-2 text-gray-600 product-data-rating">${result.score}</span>`;
+                            starsHtml += `<span class="ml-2 text-gray-600 product-data-rating">${result.rating}</span>`;
                         }
 
                         // Seleccionar el contenedor de las estrellas

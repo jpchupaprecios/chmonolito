@@ -105,7 +105,7 @@ final class ChapiAmazonProductDetailParser
 
         $this->scriptData = $this->getScriptData((string) $html);
 
-        //$variantsParser = new ChapiAmazonVariantsParser($this->xpath);
+        $variantsParser = new ChapiAmazonVariantsParser($this->xpath);
 
         $images = $this->getImages();
         $image = $images['main'] ?? '';
@@ -177,13 +177,13 @@ final class ChapiAmazonProductDetailParser
 
         //$this->product->save();
 
-        //$variants = $variantsParser->parse($this->product->getAttribute('product_id'));
+        $variants = $variantsParser->parse($this->product->getAttribute('product_id'));
 
         $variantCombinations = [];
 
         $hasVariants = false;//count($variants) > 0;
 
-        $this->product->setRelation('variants', []);
+        $this->product->setAttribute('variants', $variants);
 
         $this->product->setAttribute('has_combinations', $hasVariants);
 
