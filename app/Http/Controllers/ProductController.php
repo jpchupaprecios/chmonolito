@@ -13,6 +13,7 @@ use DOMDocument;
 use DOMXPath;
 use App\Models\Product;
 use App\Parsers\Chapi\Amazon\Complete\Product\ChapiAmazonProductDetailParser;
+use App\Helpers\Price;
 class ProductController extends Controller
 {
     private static $userAgent;
@@ -421,6 +422,7 @@ class ProductController extends Controller
                             // Vemos qué tipo de dato se ha extraído
                             if (isset($parsedProducts['price'])) {
                                 $price = $parsedProducts['price'];
+                                $price = Price::cotizarDolar($price);
                                 ////$product->price = $price;
                                 echo "<script>
                                 pData.price = " . addslashes($price) . ";

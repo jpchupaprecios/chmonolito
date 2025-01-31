@@ -15,7 +15,7 @@ use App\Http\Middleware\Admin\Admin; // <- Aquí tu middleware
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BehaviorController;
 use App\Http\Controllers\ApiController;
-
+use App\Http\Controllers\ExchangeController;
 
 Route::get('/bh/{client_session_id?}/{url?}', [BehaviorController::class, 'index'])
     ->name('bh');
@@ -56,6 +56,7 @@ Route::post('/register', [RegisterController::class, 'store'])->name('register.p
 |--------------------------------------------------------------------------
 */
 Route::get('/api/product/{productId}/{vendor}', [ApiController::class, 'product']);
+Route::get('/api/exchange', [ExchangeController::class, 'syncExchange']);
 /*
 |--------------------------------------------------------------------------
 | RUTAS PÚBLICAS

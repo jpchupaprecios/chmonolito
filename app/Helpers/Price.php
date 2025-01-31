@@ -30,8 +30,6 @@ final class Price
     }
 	public static function cotizarDolar($price)
     {
-        return $price;
-
         if (!$price) {
             return 0;
         }
@@ -103,7 +101,12 @@ final class Price
         $config['tax'] = '9';
         $config['comision'] = '13';
 
-        $dolar = env('DOLAR_PRICE', 0);
+        $dolarEnv = env('DOLAR_PRICE', 0);
+        $dolar = self::getDolarPrice();
+
+        if(!$dolar){
+            $dolar = $dolarEnv;
+        }
 
         if ($dolar) {
             $price = $price * $dolar;

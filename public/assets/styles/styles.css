@@ -287,3 +287,6 @@ body {
     align-items: center;      /* Centra verticalmente */
     justify-content: center;  /* Centra horizontalmente */
 }
+.product-data-title{
+    font-size: 20px !important;
+}

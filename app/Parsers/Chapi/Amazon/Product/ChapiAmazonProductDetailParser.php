@@ -6,6 +6,7 @@ namespace App\Parsers\Chapi\Amazon\Product;
 
 use App\Helpers\FixHtml;
 use App\Helpers\NotAllowed;
+use App\Helpers\Price;
 use App\Services\CookieService;
 use App\Models\Product\ProductDetails;
 use App\Models\Product\Thumbnail;
@@ -151,7 +152,9 @@ final class ChapiAmazonProductDetailParser
         if(!$price){
             Log::debug('NO PRICE3');
         }
-
+        if($price){
+            $price = Price::cotizarDolar($price);
+        }
         $this->product->setAttribute('price', $price);
 
 

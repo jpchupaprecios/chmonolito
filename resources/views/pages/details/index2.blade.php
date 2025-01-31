@@ -89,6 +89,7 @@
         </div>
     </div>
 </div>
+<div id="extra-data-tabs"></div>
 <!-- extra-data-tabs -->
 <script>
     let product = null;
@@ -100,6 +101,36 @@
     let combinationSeparator = '';
     let selectedVariantAsin = '{{ //selectedVariantAsin}}';
     let isProductLoaded = false;
+
+
+
+    const extraDataProduct = async (asin) => {
+        const l = 'http://laravel11.local/api/product/'+asin+'/amazon/direct';
+        const urls = [l];
+        const requestOptions = {
+            method: 'GET',
+            headers: {
+                "Content-Type": "application/json",
+            }
+        };
+        const response = await Promise.race(urls.map(url => fetch(url, requestOptions)));
+        const data = await response.json();
+
+        if (data && data.status === 'ok') {
+            const result = data.data;
+            if (result && typeof result.extendedDetails !== "undefined") {
+                let extendedDetails = result.extendedDetails
+                if (extendedDetails) {
+                    let extraOptions = document.getElementById('extra-data-tabs');
+                    if (extraOptions) {
+                        extraOptions.innerHTML = extendedDetails.html_images;
+                    }
+                }
+            }
+        }
+    }
+
+    extraDataProduct(selectedVariantAsin);
 
     const handleVariantChange = (variantName, value, pType, pTarget) => {
         const type = pType ? pType : 'default';
