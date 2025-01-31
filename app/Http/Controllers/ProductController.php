@@ -18,12 +18,12 @@ class ProductController extends Controller
     private static $userAgent;
     protected const COOKIE_PATH = 'app/';
 
-    private function showLayout(){
+    private function showLayout($id){
         $layoutStart = file_get_contents(resource_path('views/layouts/layoutStart.blade.php'));
         $layoutStart = $this->showMarquee($layoutStart);
         $layoutStart = $this->showHeader($layoutStart);
         $layoutStart = $this->showCategories($layoutStart);
-        $layoutStart = $this->showSearchWrapper($layoutStart);
+        $layoutStart = $this->showSearchWrapper($layoutStart, $id);
         $layoutStart = $this->showFav($layoutStart);
         $layoutStart = $this->showBreadcrumb($layoutStart);
         $layoutStart = $this->showQuantityControls($layoutStart);
@@ -31,11 +31,12 @@ class ProductController extends Controller
         return $layoutStart;
     }
 
-    private function showSearchWrapper($layoutStart){
+    private function showSearchWrapper($layoutStart, $id){
         $searchWrapper = file_get_contents(resource_path('views/pages/details/index2.blade.php'));
         $searchBar = file_get_contents(resource_path('views/components/search.blade.php'));
         $layoutStart = str_replace('{{ //SEARCH}}', $searchBar, $layoutStart);
         $layoutStart = str_replace('{{ //CONTENT}}', $searchWrapper, $layoutStart);
+        $layoutStart = str_replace('{{ //selectedVariantAsin}}', $id, $layoutStart);
         //CONTENT
 
         return $layoutStart;
@@ -842,6 +843,12 @@ class ProductController extends Controller
         if (hiddenColorInput) {
             hiddenColorInput.value = button.dataset.color;
         }
+
+        const chosenAsin = button.getAttribute("data-sku")
+        if (chosenAsin) {
+            selectedVariantAsin = chosenAsin;
+            updateProduct(chosenAsin, chosenAsin);
+        }
     }
 
     // Asignamos el evento click a cada botón
@@ -902,7 +909,11 @@ class ProductController extends Controller
         if (e.target.matches("li[data-size]")) {
             const chosenValue = e.target.getAttribute("data-size")
             const chosenText = e.target.textContent
-
+            const chosenAsin = e.target.getAttribute("data-size")
+            if (chosenAsin) {
+                selectedVariantAsin = chosenAsin;
+                updateProduct(chosenAsin, chosenAsin);
+            }
             // Actualizamos el texto del botón
             sizeSelectLabel'.$itera.'.textContent = chosenText
             // Actualizamos el select oculto

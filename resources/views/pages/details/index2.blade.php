@@ -98,7 +98,7 @@
     let selectedStore = 'amazon'; // Asume un valor por defecto
     let combinations = [];
     let combinationSeparator = '';
-    let selectedVariantAsin = '';
+    let selectedVariantAsin = '{{ //selectedVariantAsin}}';
     let isProductLoaded = false;
 
     const handleVariantChange = (variantName, value, pType, pTarget) => {
