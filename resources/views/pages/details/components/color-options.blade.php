@@ -82,9 +82,5 @@
         });
     });
 
-    // (Opcional) Seleccionar por defecto el primer color,
-    // o cualquier lógica inicial que quieras.
-    if (colorButtons.length > 0) {
-        setSelectedColor(colorButtons[0]);
-    }
+
 </script>

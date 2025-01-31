@@ -8,6 +8,6 @@
         type="hidden"
         id="colorInput"
         name="color"
-        value=""
+        value="<!-- color_variant_value -->"
     />
 </div>

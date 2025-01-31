@@ -143,17 +143,28 @@ class ProductController extends Controller
 
         $colorsDiv = file_get_contents(resource_path('views/pages/details/components/color-options2.blade.php'));
         $colors = "";
+        $variantSelected = "";
         foreach($variants as $variant){
 
-            $selected = ($variant["selected"]) ? ' ring-blue-500 ring-2 ring-offset-2' : '';
+            $selected = ($variant["selected"]) ? ' ring-2 ring-offset-2 ring-blue-500' : '';
+            $classSelected = "";
+            if($selected){
+                $a = 1;
+                //color-button w-16 border-2 focus:outline-none focus:ring-2 focus:ring-offset-2 border-gray-300 ring-2 ring-offset-2 ring-blue-500
+                //color-button w-16 border-2 focus:outline-none focus:ring-2 focus:ring-offset-2 border-gray-300
+                $classSelected = "selected-variant";
+                $variantSelected = $variant["sku"];
+            }
             $colors .=
             "<img " .
                 'data-sku="'.$variant["sku"].'"'.
-                'class="color-button w-16 border-2 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 border-gray-300 '.$selected.'"'.
+                'class="'.$classSelected.' color-button w-16 border-2 focus:outline-none focus:ring-2 focus:ring-offset-2 border-gray-300 '.$selected.'"'.
                 'src="'.$variant["img"].'" />';
         }
 
         $colorsDiv = str_replace('<!-- color_variants -->', $colors, $colorsDiv);
+        $colorsDiv = str_replace('<!-- color_variant_value -->', $variantSelected, $colorsDiv);
+
         return $colorsDiv;
     }
 
@@ -858,11 +869,7 @@ class ProductController extends Controller
         });
     });
 
-    // (Opcional) Seleccionar por defecto el primer color,
-    // o cualquier lógica inicial que quieras.
-    if (colorButtons.length > 0) {
-        setSelectedColor(colorButtons[0]);
-    }
+
 </script>
 ';
             }else{

@@ -181,10 +181,12 @@
         const urls = [apiUrl]; // Tres llamadas al mismo endpoint para tomar la más rápida
         //const urls = [apiUrl, apiUrl, apiUrl, apiUrl]; // Tres llamadas al mismo endpoint para tomar la más rápida
         try {
+            toogleShimmers(true);
             const response = await Promise.race(urls.map(url => fetch(url, requestOptions)));
             const data = await response.json();
 
             if (data && data.status === 'ok') {
+                toogleShimmers(false);
                 const result = data.data;
                 if (result) {
                     if(typeof result.image !== "undefined" && result.image !== null) {
@@ -271,15 +273,52 @@
                     //result.has_combinations
                 }
             } else {
+                toogleShimmers(false);
                 console.error('No data found for product.');
             }
         } catch (error) {
+            toogleShimmers(false);
             console.error("Hubo un error buscando los productos:", error);
         } finally {
+            toogleShimmers(false);
             isLoading = false;
             isProductLoaded = true;
         }
     };
+
+    function toogleShimmers(show){
+        if(show){
+            document.querySelector('.product-data-price').style.display = 'none';
+            document.querySelector('.price-shimmer').style.display = 'flex';
+
+            document.querySelector('.product-data-image').style.display = 'none';
+            document.querySelector('.image-placeholder').style.display = 'flex';
+
+
+            document.querySelector('.product-data-title').style.display = 'none';
+            document.querySelector('.title-shimmer-wrapper').style.display = 'block';
+
+
+
+            document.querySelector('.color-shimmer-options').style.display = 'flex';
+            document.querySelector('.rating-stars-wrapper').style.display = 'none';//flex
+        }else{
+            document.querySelector('.product-data-price').style.display = 'block';
+            document.querySelector('.price-shimmer').style.display = 'none';
+
+            document.querySelector('.product-data-image').style.display = 'block';
+            document.querySelector('.image-placeholder').style.display = 'none';
+
+
+            document.querySelector('.product-data-title').style.display = 'block';
+            document.querySelector('.title-shimmer-wrapper').style.display = 'none';
+
+
+
+            document.querySelector('.color-shimmer-options').style.display = 'none';
+            document.querySelector('.rating-stars-wrapper').style.display = 'flex';//flex
+        }
+    }
 
     // Funciones auxiliares que necesitarás implementar o definir
     function getAllTrimCombinations(array, combinationSeparator) {
