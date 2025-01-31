@@ -196,7 +196,7 @@ final class ChapiAmazonProductDetailParser
         $this->product->setRelation('categories', $categories);
         //$this->product->categories()->saveMany($categories);
 
-        //$extendedDetails = $this->chapiAmazonExtendedDetailsParser->getData($this->dom, $this->xpath, $productId, $this->product->id);
+        $extendedDetails = $this->chapiAmazonExtendedDetailsParser->getData($this->dom, $this->xpath, $productId, $this->product->id);
 
         /*$isAllowedByBrand = $notAllowed->isAllowedByBrand($extendedDetails->brand);
 
@@ -205,7 +205,8 @@ final class ChapiAmazonProductDetailParser
             return $this->product;
         }
 
-        $this->product->setRelation('extendedDetails', $extendedDetails);*/
+        */
+        $this->product->setAttribute('extendedDetails', $extendedDetails);
 
         return $this->product;
     }
