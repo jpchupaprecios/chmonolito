@@ -165,6 +165,137 @@
         selectedVariants = updatedSelectedVariants;
     };
 
+    /**
+     * buildSelectVariantHTML
+     *
+     * Construye el HTML que antes generabas con tu PHP usando str_replace.
+     * Recibe un objeto variant tal como lo tienes en JavaScript.
+     */
+    function buildSelectVariantHTML(variantData) {
+        // 1. Obtenemos las opciones y el título
+        let variantOptions = variantData.options || [];
+        let title = variantData.title || '';
+
+        // 2. Si no hay título, intentamos usar variantData.name
+        if (!title) {
+            title = variantData.name || '';
+            if (title) {
+                // Reemplazar guiones bajos por espacios y poner mayúscula inicial a cada palabra
+                title = title
+                    .replace(/_/g, ' ')
+                    .replace(/\b\w/g, (l) => l.toUpperCase());
+
+                // Ajustes de traducción (similar a tu if/elseif en PHP)
+                if (title === 'Size Name') {
+                    title = 'Tamaño';
+                } else if (title === 'Color Name') {
+                    title = 'Color';
+                } else if (title === 'Service Provider') {
+                    title = 'Proveedor';
+                }
+
+                // Quitar la palabra “Name” si está al final
+                title = title.replace('Name', '');
+            }
+        }
+
+        // 3. Plantilla base (como tu selects2.blade.php),
+        //    usando placeholders <!-- select_name -->, <!-- options -->, <!-- lis -->
+        //    para hacer los reemplazos después
+        let template = `
+    <div class="mb-6">
+      <h3 class="font-semibold mb-2"><!-- select_name -->:</h3>
+      <!-- CONTENEDOR DEL SELECT CUSTOM -->
+      <div class="relative inline-block w-[180px]" id="sizeSelectContainer">
+
+          <!-- BOTÓN que se ve siempre -->
+          <button
+              id="sizeSelectButton-{{ select_name }}"
+              type="button"
+              class="flex h-10 w-full items-center justify-between
+                     rounded-md border border-input bg-background px-3 py-2 text-sm
+                     ring-offset-background focus:outline-none focus:ring-2
+                     focus:ring-ring focus:ring-offset-2"
+          >
+              <span id="sizeSelectLabel-{{ select_name }}">Seleccionar</span>
+              <svg xmlns="http://www.w3.org/2000/svg"
+                   width="24" height="24"
+                   viewBox="0 0 24 24"
+                   fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round"
+                   stroke-linejoin="round"
+                   class="lucide lucide-chevron-down h-4 w-4 opacity-50"
+              >
+                  <path d="m6 9 6 6 6-6"></path>
+              </svg>
+          </button>
+
+          <!-- LISTA DESPLEGABLE con las opciones -->
+          <div
+              id="sizeOptions-{{ select_name }}"
+              class="hidden absolute z-50 w-full bg-white border border-gray-200
+                     rounded shadow-md mt-1"
+          >
+              <ul>
+                  <!-- lis -->
+              </ul>
+          </div>
+
+          <!-- SELECT REAL (OCULTO) PARA EL FORMULARIO -->
+          <select
+              id="hiddenSizeSelect-{{ select_name }}"
+              name="size"
+              class="hidden"
+          >
+              <!-- options -->
+          </select>
+      </div>
+    </div>
+  `;
+
+        // 4. Creamos el string de `<option>` y `<li>` igual que en tu PHP
+        let selectOptions = '<option value="">Seleccionar</option>';
+        let listItems = '';
+        let selectedOption = null;
+        // Recorremos cada option de la variante
+        variantOptions.forEach((opt) => {
+            const selected = opt.selected ? 'selected' : '';
+
+            if(opt.selected){
+                selectedOption = opt;
+            }
+
+            const available = !opt.available ? 'disabled' : '';
+            selectOptions += `
+      <option ${selected} ${available} value="${opt.sku}">
+        ${opt.text}
+      </option>
+    `;
+            listItems += `
+      <li
+        class="px-3 py-2 hover:bg-gray-100 cursor-pointer"
+        data-size="${opt.sku}"
+      >
+        ${opt.text}
+      </li>
+    `;
+        });
+
+        // 5. Reemplazamos en la plantilla:
+        //    - <!-- select_name --> por el título
+        //    - <!-- options --> por el string de <option>...
+        //    - <!-- lis --> por el string de <li>...
+        template = template.replace('<!-- select_name -->', title);
+        template = template.replace('<!-- options -->', selectOptions);
+        template = template.replace('<!-- lis -->', listItems);
+
+        // 6. Devolvemos la plantilla resultante para ser inyectada en el DOM
+        return [
+            template,selectedOption
+        ];
+    }
+
+
     const updateProduct = async (asin, parentProductId) => {
         isLoading = true;
         isProductLoaded = false;
@@ -283,7 +414,76 @@
                                     });
                                 }
                             } else {
-                                // Otros tipos de variante
+                                // Generamos el HTML “selects2.blade.php” dinámicamente
+                                document.getElementById('selects').innerHTML = '';
+                                let generatedHtml = buildSelectVariantHTML(variant);
+
+                                generatedHtml = generatedHtml[0];
+                                let selectedOption = generatedHtml[1];
+
+                                // Inyectamos el HTML en el contenedor #selects (por ejemplo, concatenando)
+                                const selectsContainer = document.getElementById('selects');
+                                if (selectsContainer) {
+                                    selectsContainer.innerHTML += generatedHtml;
+                                    document.getElementById('selects').style.display = 'block';
+
+
+                                    /**/
+                                    eval(`sizeSelectButton${i} = document.getElementById("sizeSelectButton-"+option.name)`);
+
+                                    eval(`sizeSelectLabel${i} = document.getElementById("sizeSelectLabel-"+option.name)`);
+
+                                    eval(`sizeOptions${i} = document.getElementById("sizeOptions-"+option.name)`);
+
+                                    eval(`hiddenSizeSelect${i} = document.getElementById("hiddenSizeSelect-"+option.name)`);
+
+
+                                    eval(`
+                                      sizeSelectButton${i}.addEventListener("click", () => {
+                                        console.log("a");
+                                        sizeOptions${i}.classList.toggle("hidden");
+                                      });
+                                    `);
+
+                                    if (selectedOption) {
+                                        eval(`
+                                            sizeSelectLabel${i}.textContent = "${selectedOption["text"]}";
+                                            sizeOptions${i}.addEventListener("click", (e) => {
+                                              // Verificamos si se hizo click en un <li> con data-size
+                                              if (e.target.matches("li[data-size]")) {
+                                                const chosenValue = e.target.getAttribute("data-size");
+                                                const chosenText = e.target.textContent;
+                                                const chosenAsin = e.target.getAttribute("data-size");
+
+                                                if (chosenAsin) {
+                                                  selectedVariantAsin = chosenAsin;
+                                                  updateProduct(chosenAsin, chosenAsin);
+                                                }
+
+                                                // Actualizamos el texto del label
+                                                sizeSelectLabel${i}.textContent = chosenText;
+                                                // Actualizamos el <select> oculto
+                                                hiddenSizeSelect${i}.value = chosenValue;
+                                                // Cerramos el dropdown
+                                                sizeOptions${i}.classList.add("hidden");
+                                              }
+                                            });
+                                          `);
+                                                                            }
+
+                                        eval(`
+                                          document.addEventListener("click", (e) => {
+                                            if (
+                                              !sizeSelectButton${i}.contains(e.target) &&
+                                              !sizeOptions${i}.contains(e.target)
+                                            ) {
+                                              sizeOptions${i}.classList.add("hidden");
+                                            }
+                                          });
+                                        `);
+                                    /**/
+
+                                }
                             }
                         }
 
