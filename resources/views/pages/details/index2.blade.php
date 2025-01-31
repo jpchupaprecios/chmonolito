@@ -184,22 +184,91 @@
             const response = await Promise.race(urls.map(url => fetch(url, requestOptions)));
             const data = await response.json();
 
-            if (data && data.length > 0) {
-                const result = data[0].data;
+            if (data && data.status === 'ok') {
+                const result = data.data;
                 if (result) {
-                    setProduct(result);
-                    combinationSeparator = result.combination_separator;
-                    combinations = result.combinations;
-                    if (typeof result.variants !== "undefined") {
-                        if (typeof result.asin !== "undefined" && result.asin) {
-                            selectedVariantAsin = result.asin;
-                        } else if (typeof result.productId !== "undefined" && result.productId) {
-                            selectedVariantAsin = result.productId;
+                    if(typeof result.image !== "undefined" && result.image !== null) {
+                        const imageElement = document.querySelector('.product-data-image');
+                        imageElement.src = result.image;
+                    }
+                    if(typeof result.price !== "undefined" && result.price !== null) {
+                        const priceElement = document.querySelector('.product-data-price');
+                        priceElement.textContent = "$ " + result.price + " MXN";
+                    }
+                    if(typeof result.rating !== "undefined" && result.rating !== null) {
+                        const rating = parseFloat(result.rating);
+                        let fullStars = Math.floor(rating);
+                        const decimalPart = rating - fullStars;
+                        let halfStar = 0;
+
+                        if (decimalPart > 0) {
+                            if (decimalPart >= 0.6) {
+                                fullStars++;
+                            } else {
+                                halfStar = 1;
+                            }
                         }
 
-                        const initialVariants = initializeSelectedVariants(result.variants);
-                        selectedVariants = initialVariants;
+                        if (fullStars > 5) {
+                            fullStars = 5;
+                            halfStar = 0;
+                        }
+
+                        const emptyStars = 5 - (fullStars + halfStar);
+
+                        let starsHtml = "";
+
+                        // Generar estrellas llenas
+                        for (let i = 0; i < fullStars; i++) {
+                            starsHtml += `<svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                </svg>`;
+                        }
+
+                        // Generar media estrella si es necesario
+                        if (halfStar) {
+                            starsHtml += `<svg class="w-5 h-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                    <defs>
+                        <linearGradient id="half-star">
+                            <stop offset="50%" stop-color="#facc15"/>
+                            <stop offset="50%" stop-color="#d1d5db"/>
+                        </linearGradient>
+                    </defs>
+                    <path fill="url(#half-star)" d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                </svg>`;
+                        }
+
+                        // Generar estrellas vacías
+                        for (let i = 0; i < emptyStars; i++) {
+                            starsHtml += `<svg class="w-5 h-5 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                </svg>`;
+                        }
+
+                        if(typeof result.score !== "undefined" && result.score !== null) {
+                            // Agregar el texto del rating
+                            starsHtml += `<span class="ml-2 text-gray-600 product-data-rating">${result.score}</span>`;
+                        }
+
+                        // Seleccionar el contenedor de las estrellas
+                        const ratingStarsWrapper = document.querySelector('.rating-stars-wrapper');
+                        document.querySelector('.rating-stars-wrapper').style.display = 'flex';
+
+                        // Actualizar el contenido del contenedor con el nuevo HTML
+                        ratingStarsWrapper.innerHTML = starsHtml;
+                        console.log("rating updated");
                     }
+
+                    if(typeof result.title !== "undefined" && result.title !== null) {
+                        const titleElement = document.querySelector('.product-data-title');
+                        titleElement.textContent = result.title;
+                    }
+
+                    /*result.
+                    result.
+                    result.
+                    result.*/
+                    //result.has_combinations
                 }
             } else {
                 console.error('No data found for product.');
