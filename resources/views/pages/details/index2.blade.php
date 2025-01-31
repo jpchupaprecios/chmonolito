@@ -210,14 +210,14 @@
 
           <!-- BOTÓN que se ve siempre -->
           <button
-              id="sizeSelectButton-{{ select_name }}"
+              id="sizeSelectButton-`+variantData.name+`"
               type="button"
               class="flex h-10 w-full items-center justify-between
                      rounded-md border border-input bg-background px-3 py-2 text-sm
                      ring-offset-background focus:outline-none focus:ring-2
                      focus:ring-ring focus:ring-offset-2"
           >
-              <span id="sizeSelectLabel-{{ select_name }}">Seleccionar</span>
+              <span id="sizeSelectLabel-`+variantData.name+`">Seleccionar</span>
               <svg xmlns="http://www.w3.org/2000/svg"
                    width="24" height="24"
                    viewBox="0 0 24 24"
@@ -232,7 +232,7 @@
 
           <!-- LISTA DESPLEGABLE con las opciones -->
           <div
-              id="sizeOptions-{{ select_name }}"
+              id="sizeOptions-`+variantData.name+`"
               class="hidden absolute z-50 w-full bg-white border border-gray-200
                      rounded shadow-md mt-1"
           >
@@ -243,7 +243,7 @@
 
           <!-- SELECT REAL (OCULTO) PARA EL FORMULARIO -->
           <select
-              id="hiddenSizeSelect-{{ select_name }}"
+              id="hiddenSizeSelect-`+variantData.name+`"
               name="size"
               class="hidden"
           >
@@ -417,9 +417,8 @@
                                 // Generamos el HTML “selects2.blade.php” dinámicamente
                                 document.getElementById('selects').innerHTML = '';
                                 let generatedHtml = buildSelectVariantHTML(variant);
-
-                                generatedHtml = generatedHtml[0];
                                 let selectedOption = generatedHtml[1];
+                                generatedHtml = generatedHtml[0];
 
                                 // Inyectamos el HTML en el contenedor #selects (por ejemplo, concatenando)
                                 const selectsContainer = document.getElementById('selects');
@@ -429,13 +428,13 @@
 
 
                                     /**/
-                                    eval(`sizeSelectButton${i} = document.getElementById("sizeSelectButton-"+option.name)`);
+                                    eval(`sizeSelectButton${i} = document.getElementById("sizeSelectButton-"+variant.name)`);
 
-                                    eval(`sizeSelectLabel${i} = document.getElementById("sizeSelectLabel-"+option.name)`);
+                                    eval(`sizeSelectLabel${i} = document.getElementById("sizeSelectLabel-"+variant.name)`);
 
-                                    eval(`sizeOptions${i} = document.getElementById("sizeOptions-"+option.name)`);
+                                    eval(`sizeOptions${i} = document.getElementById("sizeOptions-"+variant.name)`);
 
-                                    eval(`hiddenSizeSelect${i} = document.getElementById("hiddenSizeSelect-"+option.name)`);
+                                    eval(`hiddenSizeSelect${i} = document.getElementById("hiddenSizeSelect-"+variant.name)`);
 
 
                                     eval(`
