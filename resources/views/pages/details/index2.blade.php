@@ -72,6 +72,9 @@
         <div class="skeleton price-shimmer"></div>
         <p class="text-xl font-bold mb-4 product-data-price"></p>
         <p class="mb-4 product-data-description"></p>
+        <div class="extra-options">
+
+        </div>
         <div id="color-options">
 
         </div>

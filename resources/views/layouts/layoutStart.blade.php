@@ -35,7 +35,7 @@
                 const priceElement = document.querySelector('.product-data-price');
                 document.querySelector('.price-shimmer').style.display = 'none';
                 // actualizo el contenido del elemento por el de differences.price
-                priceElement.textContent = differences.price;
+                priceElement.textContent = "$ " + differences.price + " MXN";
                 console.log("price updated");
             }
 
@@ -56,8 +56,168 @@
                 console.log("title updated");
             }
 
-            if(typeof differences.variants !== "undefined" ){
+            if(typeof differences.variants !== "undefined" && differences.variants.length){
                 console.log("variants updated");
+
+                for(var i=0; i < differences.variants.length; i++){
+                    const variant = differences.variants[i];
+                    const variants = variant.options;
+                    const title = variant.title;
+                    const type = variant.type;
+                    let customDiv = "";
+                    if(type == "image"){
+                        // Crear el contenedor principal
+                        customDiv = document.createElement('div');
+                        customDiv.className = 'mb-4';
+                        customDiv.id = 'colorSection';
+
+                        // Crear el título
+                        const titleElement = document.createElement('h3');
+                        titleElement.className = 'font-semibold mb-2';
+                        titleElement.textContent = 'Color:';
+                        customDiv.appendChild(titleElement);
+
+                        // Crear el contenedor de los colores
+                        const colorsContainer = document.createElement('div');
+                        colorsContainer.className = 'flex space-x-2';
+                        customDiv.appendChild(colorsContainer);
+
+                        // Crear el input hidden para el color seleccionado
+                        const colorInput = document.createElement('input');
+                        colorInput.type = 'hidden';
+                        colorInput.id = 'colorInput';
+                        colorInput.name = 'color';
+                        colorInput.value = '';
+                        customDiv.appendChild(colorInput);
+
+                        // Generar las imágenes de los colores
+                        variants.forEach(variant => {
+                            const selectedClass = variant.selected ? 'ring-blue-500 ring-2 ring-offset-2' : '';
+                            const colorButton = document.createElement('img');
+                            colorButton.dataset.sku = variant.sku;
+                            colorButton.className = `color-button w-16 border-2 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 border-gray-300 ${selectedClass}`;
+                            colorButton.src = variant.img;
+
+                            // Agregar evento de clic para seleccionar el color
+                            colorButton.addEventListener('click', () => {
+                                // Remover la clase de selección de todos los botones
+                                document.querySelectorAll('.color-button').forEach(button => {
+                                    button.classList.remove('ring-blue-500', 'ring-2', 'ring-offset-2');
+                                });
+
+                                // Agregar la clase de selección al botón clickeado
+                                colorButton.classList.add('ring-blue-500', 'ring-2', 'ring-offset-2');
+
+                                // Actualizar el valor del input hidden
+                                colorInput.value = variant.sku;
+                            });
+
+                            colorsContainer.appendChild(colorButton);
+                        });
+                    }else {
+                        customDiv = document.createElement('div');
+                        customDiv.className = 'mb-6';
+
+                        // Crear el título
+                        const titleElement = document.createElement('h3');
+                        titleElement.className = 'font-semibold mb-2';
+                        titleElement.textContent = title || "Seleccionar"; // Usar el título o un valor por defecto
+                        customDiv.appendChild(titleElement);
+
+                        // Crear el contenedor del select personalizado
+                        const selectContainer = document.createElement('div');
+                        selectContainer.className = 'relative inline-block w-[180px]';
+                        selectContainer.id = 'sizeSelectContainer';
+
+                        // Crear el botón que se ve siempre
+                        const selectButton = document.createElement('button');
+                        selectButton.type = 'button';
+                        selectButton.className = 'flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2';
+                        selectButton.id = `sizeSelectButton-${variant.name}`;
+
+                        // Crear el texto del botón
+                        const selectButtonLabel = document.createElement('span');
+                        selectButtonLabel.id = `sizeSelectLabel-${variant.name}`;
+                        selectButtonLabel.textContent = 'Seleccionar';
+                        selectButton.appendChild(selectButtonLabel);
+
+                        // Crear el ícono de flecha
+                        const selectButtonIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                        selectButtonIcon.setAttribute('width', '24');
+                        selectButtonIcon.setAttribute('height', '24');
+                        selectButtonIcon.setAttribute('viewBox', '0 0 24 24');
+                        selectButtonIcon.setAttribute('fill', 'none');
+                        selectButtonIcon.setAttribute('stroke', 'currentColor');
+                        selectButtonIcon.setAttribute('stroke-width', '2');
+                        selectButtonIcon.setAttribute('stroke-linecap', 'round');
+                        selectButtonIcon.setAttribute('stroke-linejoin', 'round');
+                        selectButtonIcon.classList.add('lucide', 'lucide-chevron-down', 'h-4', 'w-4', 'opacity-50');
+                        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                        path.setAttribute('d', 'm6 9 6 6 6-6');
+                        selectButtonIcon.appendChild(path);
+                        selectButton.appendChild(selectButtonIcon);
+
+                        // Crear el menú desplegable
+                        const selectOptions = document.createElement('div');
+                        selectOptions.className = 'hidden absolute z-50 w-full bg-white border border-gray-200 rounded shadow-md mt-1';
+                        selectOptions.id = `sizeOptions-${variant.name}`;
+
+                        // Crear la lista de opciones
+                        const optionsList = document.createElement('ul');
+                        variants.forEach(variant => {
+                            const optionItem = document.createElement('li');
+                            optionItem.className = 'px-3 py-2 hover:bg-gray-100 cursor-pointer';
+                            optionItem.dataset.size = variant.sku;
+                            optionItem.textContent = variant.text;
+
+                            // Agregar evento de clic para seleccionar la opción
+                            optionItem.addEventListener('click', () => {
+                                // Actualizar el texto del botón
+                                selectButtonLabel.textContent = variant.text;
+
+                                // Ocultar el menú desplegable
+                                selectOptions.classList.add('hidden');
+
+                                // Actualizar el valor del select oculto
+                                hiddenSelect.value = variant.sku;
+                            });
+
+                            optionsList.appendChild(optionItem);
+                        });
+                        selectOptions.appendChild(optionsList);
+
+                        // Crear el select oculto
+                        const hiddenSelect = document.createElement('select');
+                        hiddenSelect.id = `hiddenSizeSelect-${variant.name}`;
+                        hiddenSelect.name = 'size';
+                        hiddenSelect.className = 'hidden';
+
+                        // Agregar las opciones al select oculto
+                        variants.forEach(variant => {
+                            const option = document.createElement('option');
+                            option.value = variant.sku;
+                            option.textContent = variant.text;
+                            if (variant.selected) option.selected = true;
+                            if (!variant.available) option.disabled = true;
+                            hiddenSelect.appendChild(option);
+                        });
+
+                        // Agregar evento para mostrar/ocultar el menú desplegable
+                        selectButton.addEventListener('click', () => {
+                            selectOptions.classList.toggle('hidden');
+                        });
+
+                        // Agregar todos los elementos al contenedor
+                        selectContainer.appendChild(selectButton);
+                        selectContainer.appendChild(selectOptions);
+                        selectContainer.appendChild(hiddenSelect);
+                        customDiv.appendChild(selectContainer);
+                    }
+
+                    if(customDiv){
+                        document.querySelector('.extra-options').appendChild(customDiv);
+                    }
+                }
             }
 
             if (typeof differences.rating !== "undefined") {
@@ -134,40 +294,44 @@
             // Comparar atributos principales
             const mainAttributes = ['title', 'image', 'price', 'rating'];
             mainAttributes.forEach(attr => {
-                if (pData[attr] !== d[attr]) {
-                    differences[attr] = d[attr];
+                if(d && typeof d[attr] !== "undefined"){
+                    if (pData[attr] !== d[attr]) {
+                        differences[attr] = d[attr];
+                    }
                 }
             });
 
             // Comparar variantes
-            if (pData.variants && d.variants) {
-                differences.variants = [];
+            if(d && typeof d.variants !== "undefined"){
+                if (pData.variants && d.variants) {
+                    differences.variants = [];
 
-                const pDataVariantsMap = new Map(pData.variants.map(v => [v.name, v]));
-                const dVariantsMap = new Map(d.variants.map(v => [v.name, v]));
+                    const pDataVariantsMap = new Map(pData.variants.map(v => [v.name, v]));
+                    const dVariantsMap = new Map(d.variants.map(v => [v.name, v]));
 
-                // Recorrer las variantes de d
-                d.variants.forEach(dVariant => {
-                    const pDataVariant = pDataVariantsMap.get(dVariant.name);
+                    // Recorrer las variantes de d
+                    d.variants.forEach(dVariant => {
+                        const pDataVariant = pDataVariantsMap.get(dVariant.name);
 
-                    if (!pDataVariant) {
-                        // Si la variante no existe en pData, agregarla al tercer objeto
-                        differences.variants.push(dVariant);
-                    } else {
-                        // Si la variante existe, comparar las options
-                        const optionsDiff = dVariant.options.filter(dOption => {
-                            return !pDataVariant.options.some(pOption => pOption.sku === dOption.sku);
-                        });
-
-                        if (optionsDiff.length > 0) {
-                            // Si hay options diferentes, agregar la variante con las options que faltan
-                            differences.variants.push({
-                                ...dVariant,
-                                options: optionsDiff
+                        if (!pDataVariant) {
+                            // Si la variante no existe en pData, agregarla al tercer objeto
+                            differences.variants.push(dVariant);
+                        } else {
+                            // Si la variante existe, comparar las options
+                            const optionsDiff = dVariant.options.filter(dOption => {
+                                return !pDataVariant.options.some(pOption => pOption.sku === dOption.sku);
                             });
+
+                            if (optionsDiff.length > 0) {
+                                // Si hay options diferentes, agregar la variante con las options que faltan
+                                differences.variants.push({
+                                    ...dVariant,
+                                    options: optionsDiff
+                                });
+                            }
                         }
-                    }
-                });
+                    });
+                }
             }
 
             fixData();

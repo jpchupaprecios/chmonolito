@@ -579,10 +579,13 @@ class ProductController extends Controller
             if ($data) {
                 echo "<script>product = JSON.parse('" . addslashes(json_encode($data)) . "');</script>";
                 echo "<script>
-                combinations = product.combination_separator;
-                combinationSeparator = product.combinations;
+                if(product){
+                    combinations = product.combination_separator;
+                    combinationSeparator = product.combinations;
+                    parsepDataC(pData, product);
+                }
                 </script>";
-                echo "<script>parsepDataC(pData, product);</script>";
+
             }
         }
 
@@ -885,6 +888,7 @@ class ProductController extends Controller
 
     // Mostrar/ocultar opciones
     sizeSelectButton'.$itera.'.addEventListener("click", () => {
+    console.log("a");
         sizeOptions'.$itera.'.classList.toggle("hidden")
     })';
 
