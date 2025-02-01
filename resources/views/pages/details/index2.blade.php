@@ -383,6 +383,7 @@
                         }
 
 // 2. Iteramos las variantes
+                        document.getElementById('selects').innerHTML = '';
                         for (var i = 0; i < result.variants.length; i++) {
                             let variant = result.variants[i];
                             let title = variant.title;
@@ -428,6 +429,7 @@
                                             <input type="hidden" id="colorInput" name="color" value="` + variantSelected + `">
                                         </div>
                                     `;
+
                                     document.getElementById('color-options').innerHTML = imgHtml;
 
                                     // Tomamos todos los botones de color
@@ -465,7 +467,6 @@
                                 }
                             } else {
                                 // Generamos el HTML “selects2.blade.php” dinámicamente
-                                document.getElementById('selects').innerHTML = '';
                                 let generatedHtml = buildSelectVariantHTML(variant);
                                 let selectedOption = generatedHtml[1];
                                 generatedHtml = generatedHtml[0];

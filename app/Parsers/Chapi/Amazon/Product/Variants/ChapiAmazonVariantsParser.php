@@ -46,7 +46,7 @@ final class ChapiAmazonVariantsParser
             //$dom->saveHTML($variantBlock);
 
 			if ($variantBlock) {
-				$title = $this->getVariantTitle($variantBlock);
+				$title = $this->getVariantTitle($variantBlock, $name);
 				if ($this->hasImages($variantBlock)) {
 					$variantType = 'image';
 				}
@@ -97,9 +97,21 @@ final class ChapiAmazonVariantsParser
 		return $variantBlock;
 	}
 
-	private function getVariantTitle($variantBlock): string
+	private function getVariantTitle($variantBlock, $name): string
 	{
+        /*$dom = new DOMDocument();
+        $rootNode = $this->xpath->document->documentElement;
+        $importedNode = $dom->importNode($rootNode, true);
+        $dom->appendChild($importedNode);
+        //obtener el html
+        $videoHtml = $dom->saveHTML();*/
+    //
 		$titleElement = $this->xpath->query('.//label | .//span[contains(@class, "dimension-text")]', $variantBlock)->item(0);
+        if(!$titleElement){
+            //
+            //$this->xpath->query('//div[@id="inline-twister-row-color_name"]', $variantBlock)->item(0);
+            $titleElement = $this->xpath->query('//div[@id="inline-twister-row-'.$name.'"]//span[contains(@class, "a-size-base a-color-secondary")]', $variantBlock)->item(0);
+        }
 		if ($titleElement) {
 			$title = trim(($titleElement->textContent));
 			if (strpos($title, ':') !== false) {
