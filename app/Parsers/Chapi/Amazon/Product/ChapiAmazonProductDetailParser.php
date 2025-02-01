@@ -194,7 +194,7 @@ final class ChapiAmazonProductDetailParser
         $this->product->setAttribute('type', $hasVariants ? ProductDetails::TYPE_CONFIGURABLE : ProductDetails::TYPE_SIMPLE);
 
         $this->product->setAttribute('has_variants', $hasVariants);
-        $this->product->setRelation('thumbnails', $this->getThumbnails($thumbnails));
+        $this->product->setAttribute('thumbnails', $this->getThumbnails($thumbnails));
 
         $this->product->setRelation('categories', $categories);
         //$this->product->categories()->saveMany($categories);
