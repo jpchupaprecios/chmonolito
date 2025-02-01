@@ -77,7 +77,7 @@ class ResultController extends Controller
 
     public function index(Request $request, $csi)
     {
-// Configurar streaming y encabezados
+        // Configurar streaming y encabezados
         header('Content-Type: text/html; charset=UTF-8');
         header('Cache-Control: no-cache');
         header('X-Accel-Buffering: no');
@@ -90,37 +90,34 @@ class ResultController extends Controller
         $store = $request->input('s');
         $page = $request->input('page', 1);
 
-        //return view('pages.result.index');
-
         $url = "https://www.amazon.com/s?k=" . urlencode($query) . "&language=es_US&page={$page}";
         $cookieName = date('Y-m-d') . '-amazon';
         $cookiePath = storage_path(self::COOKIE_PATH . $cookieName . '.txt');
         $cookie = '';
         $scrapingSession = ScrapingSession::where("client_session_id", $csi)->first();
 
-        if($scrapingSession){
+        if ($scrapingSession) {
             $cookie = ($scrapingSession->amazon_cookie) ? $scrapingSession->amazon_cookie : "";
             self::$userAgent = ($scrapingSession->user_agent) ? $scrapingSession->user_agent : "";
         }
 
-        if(!$scrapingSession) {
+        if (!$scrapingSession) {
             $scrapingSession = new ScrapingSession();
             $cookies = SymfonyPanther::getCookies($url);
-            if($cookies){
+            if ($cookies) {
                 $userAgent = $cookies["user-agent"];
                 $cookies = $cookies["cookies"];
 
-
                 $scrapingSession->client_session_id = $csi;
                 $cookieStr = "";
-                foreach($cookies as $cookie){
+                foreach ($cookies as $cookie) {
                     $cookieStr .= $cookie . ";";
                 }
                 $scrapingSession->amazon_cookie = $cookieStr;
                 $scrapingSession->user_agent = $userAgent;
                 $scrapingSession->save();
 
-                if($scrapingSession){
+                if ($scrapingSession) {
                     $cookie = ($scrapingSession->amazon_cookie) ? $scrapingSession->amazon_cookie : "";
                     self::$userAgent = ($scrapingSession->user_agent) ? $scrapingSession->user_agent : "";
                 }
@@ -128,8 +125,6 @@ class ResultController extends Controller
         }
 
         // Enviar HTML inicial
-
-        // Asegurarse de enviar los datos al cliente
         flush();
         $usedAsins = [];
         $counter = 0;
@@ -141,6 +136,7 @@ class ResultController extends Controller
         // Añadir un padding para evitar buffering
         echo str_repeat(" ", 1024);
         flush();
+
         $proxies = [
             [
                 'host' => 'dc.oxylabs.io',
@@ -148,57 +144,55 @@ class ResultController extends Controller
                 'user' => 'user-chupaprecios_lDWEa-country-US',
                 'pass' => '+Aq1w2e3r4t5'
             ],
-            [
+            /*[
                 'host' => 'us-pr.oxylabs.io',
                 'port' => 10000,
                 'user' => 'customer-chupaprecios_COPc9_K2KrH',
                 'pass' => '+Aq1w2e3r4t5'
-            ],
+            ],*/
             [
                 'host' => 'pr.oxylabs.io',
                 'port' => 7777,
                 'user' => 'customer-jotapey3_qcf4a-cc-us',
                 'pass' => '+Aq1w2e3r4t5'
             ],
-            [
+            /*[
                 'host' => 'pr.oxylabs.io',
                 'port' => 7777,
                 'user' => 'customer-jotapey2_Kr8Ew-cc-us',
                 'pass' => '2H5zdvxVQff'
-            ]
+            ]*/
         ];
-        $multiCurl          = curl_multi_init();
-        $handles            = [];
-        $winnerHandle       = null;
+
+        $multiCurl = curl_multi_init();
+        $handles = [];
+        $winnerHandle = null;
         $firstValidResponse = false;
+
         foreach ($proxies as $proxy) {
             $curl = curl_init($url);
-            curl_setopt_array($curl, []);
-
             curl_setopt_array($curl, [
-                CURLOPT_HTTPHEADER     => self::getHeaders($cookie),
+                CURLOPT_HTTPHEADER => self::getHeaders($cookie),
                 CURLOPT_FOLLOWLOCATION => true,
                 CURLOPT_RETURNTRANSFER => false, // Deshabilita retorno automático
-                CURLOPT_COOKIEFILE     => $cookiePath,
-                CURLOPT_COOKIEJAR      => $cookiePath,
-                CURLOPT_USERAGENT      => self::getUserAgent(),
-                CURLOPT_TIMEOUT        => 30,
+                CURLOPT_COOKIEFILE => $cookiePath,
+                CURLOPT_COOKIEJAR => $cookiePath,
+                CURLOPT_USERAGENT => self::getUserAgent(),
+                CURLOPT_TIMEOUT => 30,
                 CURLOPT_CONNECTTIMEOUT => 5,
-                CURLOPT_ENCODING       => '',
-                CURLOPT_PROXY          => $proxy['host'],
-                CURLOPT_PROXYPORT      => $proxy['port'],
-                CURLOPT_PROXYUSERPWD   => $proxy['user'] . ':' . $proxy['pass'],
-                CURLOPT_BUFFERSIZE     => 1024,
-                CURLOPT_WRITEFUNCTION  => function ($ch, $chunk) use (&$usedAsins, &$counter, &$bufferLimited, &$global, &$countParsedElements, &$countParsedElementsFail,
-                &$firstValidResponse, &$winnerHandle, &$csi) {
-                    // Supongamos que parse() retorna un array de productos
+                CURLOPT_ENCODING => '',
+                CURLOPT_PROXY => $proxy['host'],
+                CURLOPT_PROXYPORT => $proxy['port'],
+                CURLOPT_PROXYUSERPWD => $proxy['user'] . ':' . $proxy['pass'],
+                CURLOPT_BUFFERSIZE => 1024,
+                CURLOPT_WRITEFUNCTION => function ($ch, $chunk) use (&$usedAsins, &$counter, &$bufferLimited, &$global, &$countParsedElements, &$countParsedElementsFail, &$firstValidResponse, &$winnerHandle, &$csi) {
+                    // Si ya hay respuesta válida
                     if ($firstValidResponse) {
                         // Abortamos cualquier handle que no sea el ganador
                         if ($ch !== $winnerHandle) {
                             return 0;
                         }
                     }
-
 
                     $global .= $chunk;
                     $parsedProducts = AmazonSearchParser::parse($chunk, $usedAsins, $counter, $bufferLimited, $countParsedElements, $countParsedElementsFail);
@@ -208,37 +202,35 @@ class ResultController extends Controller
                             $winnerHandle = $ch;
                         }
                         $firstValidResponse = true;
-                        // Iteras sobre cada producto y renderizas la vista product.blade.php
-                            foreach ($parsedProducts as $parsedProduct){
-                                $parsedProduct["csi"] = $csi;
-                                $productHtml = view('pages.result.components.product', [
-                                    'productData' => $parsedProduct
-                                ])->render();
-                            }
 
+                        // Acumulamos el HTML de los productos
+                        $productHtml = '';
+                        foreach ($parsedProducts as $parsedProduct) {
+                            $parsedProduct["csi"] = $csi;
+                            $productHtml .= view('pages.result.components.product', [
+                                'productData' => $parsedProduct
+                            ])->render();
+                        }
 
-                            echo "<script>document.querySelector('#product-container')
+                        // Enviamos el HTML acumulado
+                        echo "<script>document.querySelector('#product-container')
         .insertAdjacentHTML('beforeend', `" . addslashes($productHtml) . "` );</script>";
-                            flush();
+                        flush();
 
-
-
-                        // Agregas un pequeño separador que ayude al navegador a "pintar"
+                        // Agregamos un pequeño separador que ayude al navegador a "pintar"
                         echo "<!-- chunk -->";
                         echo str_repeat(" ", 1024);
                         flush();
                     }
 
-                    // IMPORTANTE: devolver el número de bytes procesados,
-                    // para que cURL sepa que todo se manejó bien.
+                    // Devolvemos la cantidad de bytes procesados
                     return strlen($chunk);
                 }
-
             ]);
+
             curl_multi_add_handle($multiCurl, $curl);
             $handles[] = $curl;
         }
-        /**/
 
         do {
             $status = curl_multi_exec($multiCurl, $active);
@@ -269,27 +261,17 @@ class ResultController extends Controller
         curl_multi_close($multiCurl);
 
         $cleanHtml = self::repairHtml($global);
-        /*$dom = new DOMDocument();
-        $dom->loadHTML($cleanHtml);
-        $xpath = new DOMXPath($dom);
-        $productNodes = $xpath->query('//div[@data-asin and string-length(@data-asin) > 0]');
-        $countProductNodes = count($productNodes);
-        $countParsedElements;
-        $countParsedElementsFail;
-        $countParsedElementsFailHtml;*/
         $this->resultParser = new ChapiAmazonResultParser();
         $resultParse = $this->resultParser->parse($cleanHtml, "amazon", $query, false);
-        if($resultParse){
+
+        if ($resultParse) {
             echo "<script>resultsC = JSON.parse('" . addslashes(json_encode($resultParse)) . "');</script>";
         }
-
-
-        curl_close($curl);
 
         // Finalizar la página HTML
         $endLayout = file_get_contents(resource_path('views/layouts/layoutEnd.blade.php'));
         $footer = file_get_contents(resource_path('views/components/footer.blade.php'));
-        $endLayout = str_replace('{{ //QUERY }}', 'q='.$query, $endLayout);
+        $endLayout = str_replace('{{ //QUERY }}', 'q=' . $query, $endLayout);
         $endLayout = str_replace('{{ //FOOTER}}', $footer, $endLayout);
         echo $endLayout;
         flush(); // Asegurarse de enviar el contenido final
