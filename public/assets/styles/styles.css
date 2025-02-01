@@ -295,7 +295,12 @@ body {
     position: absolute;
     top: 0;
     left: 108px;
-    width: 1000px;
+    width: 400px;
     display: block;
     top: 10px;
+}
+
+#extra-data-tabs{
+    margin-top: 50px;
+    margin-bottom: 50px;
 }

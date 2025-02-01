@@ -668,6 +668,58 @@
                         titleElement.textContent = result.title;
                     }
 
+                    if (result && typeof result.thumbnails !== "undefined") {
+                        document.getElementById("thumbnails-wrapper").innerHTML = "";
+                        let html = '<div class="gallery clearfix"> <div class="pics clearfix"> <div class="thumbs">';
+                        let first = null;
+                        for (var i=0; i < result.thumbnails.length; i++) {
+                            let image = result.thumbnails[i];
+                            if(!first){
+                                first = image;
+                            }
+                            html += '<div class="preview"> <a href="#" data-full="' + image.link + '" data-title="Spring 2013 | Luna + Hill"> <img src="' + image.link + '"/> </a> </div>';
+                        }
+                        html += '</div> <a href="' + first.link + '" class="full" title="Spring 2013 | Luna + Hill"> <img src="' + first.link + '"> </a> </div>';
+                        let wrapperMainImg = document.getElementById('wrapper-main-img');
+
+                        if(typeof wrapperMainImg !== 'undefined' && wrapperMainImg !== null){
+                            wrapperMainImg.style.display = 'none';
+
+                            var container = document.querySelector('#thumbnails-wrapper');
+                            if (container) {
+                                container.insertAdjacentHTML('beforeend', html);
+                            }
+
+                            $(document).ready(function(){
+
+                                $('.preview a').on('click', function(){
+                                    $('.selected').removeClass('selected');
+                                    $(this).addClass('selected');
+                                    var picture = $(this).data();
+
+                                    event.preventDefault(); //prevents page from reloading every time you click a thumbnail
+
+
+                                    $('.full img').fadeOut( 100, function() {
+                                        $('.full img').attr('src', picture.full);
+                                        $('.full').attr('href', picture.full);
+                                        $('.full').attr('title', picture.title);
+
+                                    }).fadeIn();
+                                });// end on click
+
+                                $('.full').fancybox({
+                                    helpers : {
+                                        title: {
+                                            type: 'inside'
+                                        }
+                                    },
+                                    closeBtn : true,
+                                });
+                            });//end doc ready
+                        }
+                    }
+
                     /*result.
                     result.
                     result.
