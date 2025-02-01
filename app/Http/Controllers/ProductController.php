@@ -333,28 +333,68 @@ class ProductController extends Controller
                                 $firstValidResponse = true;
 
                                 echo "<script>pData.thumbs = JSON.parse('" . json_encode($imagesThumb) . "');</script>";
-                                $html = '<div class="flex space-x-2 thumbnails">';
+                                $html = '<div class="gallery clearfix">
+    <div class="pics clearfix">
+      <div class="thumbs">
+
+      ';
+                                //$html = '<div class="flex space-x-2 thumbnails">';
+                                $first = null;
                                 foreach ($imagesThumb as $image) {
+                                    if(!$first){
+                                        $first = $image;
+                                    }
                                     $html .= '
-                                <img
-                                    alt=""
-                                    loading="lazy"
-                                    decoding="async"
-                                    data-nimg="fill"
-                                    class="rounded-md thumb-img"
-                                    src="' . $image . '"
-                                    style="position: absolute; height: 100%; width: 100%; inset: 0px; object-fit: cover; color: transparent;"
-                                >
+        <div class="preview"> <a href="#" data-full="' . $image . '" data-title="Spring 2013 | Luna + Hill"> <img src="' . $image . '"/> </a> </div>
                             ';
                                 }
-                                $html .= '</div>';
+                                $html .= '</div>
+      <a href="' . $first . '" class="full" title="Spring 2013 | Luna + Hill">
+      <!-- first image is viewable to start -->
+      <img src="' . $first . '"> </a>
+    </div>
+  </div>';
+
                                 $escapedHtml = json_encode($html);
                                 echo "<script>
+                            let wrapperMainImg = document.getElementById('wrapper-main-img');
+                            if(typeof wrapperMainImg !== 'undefined' && wrapperMainImg !== null){
+                                wrapperMainImg.style.display = 'none';
+                            }
+
                             var content   = $escapedHtml;
                             var container = document.querySelector('#thumbnails-wrapper');
                             if (container) {
                                 container.insertAdjacentHTML('beforeend', content);
                             }
+
+    $(document).ready(function(){
+
+        $('.preview a').on('click', function(){
+            $('.selected').removeClass('selected');
+            $(this).addClass('selected');
+            var picture = $(this).data();
+
+            event.preventDefault(); //prevents page from reloading every time you click a thumbnail
+
+
+            $('.full img').fadeOut( 100, function() {
+              $('.full img').attr('src', picture.full);
+              $('.full').attr('href', picture.full);
+              $('.full').attr('title', picture.title);
+
+          }).fadeIn();
+        });// end on click
+
+        $('.full').fancybox({
+            helpers : {
+                title: {
+                    type: 'inside'
+                }
+            },
+            closeBtn : true,
+        });
+    });//end doc ready
                         </script>";
                             }
                         }
@@ -436,10 +476,12 @@ class ProductController extends Controller
                             pData.image = '" . addslashes($imageUrl) . "';
                             const imgEl        = document.querySelector('.product-data-image');
                             const imgElShimmer = document.querySelector('.image-placeholder');
-                            imgElShimmer.style.display = 'none';
-                            imgEl.style.display = 'block';
-                            imgEl.src = '" . addslashes($imageUrl) . "';
-                            imgEl.alt = 'Imagen del producto';
+                            if(typeof imgElShimmer !== 'undefined' && imgElShimmer !== null){
+                                imgElShimmer.style.display = 'none';
+                                imgEl.style.display = 'block';
+                                imgEl.src = '" . addslashes($imageUrl) . "';
+                                imgEl.alt = 'Imagen del producto';
+                            }
                         </script>";
                             }
                             if (isset($parsedProducts['rating'])) {
@@ -572,7 +614,9 @@ class ProductController extends Controller
                     $data->variants = $variants;
                 }
                 if ($data) {
-                    echo "<script>product = JSON.parse('" . addslashes(json_encode($data)) . "');</script>";
+                    $data = trim(addslashes(json_encode($data)));
+                    if($data){
+                    echo "<script>product = JSON.parse('" . $data . "');</script>";
                     echo "<script>
                 if(product){
                     combinations = product.combination_separator;
@@ -580,6 +624,7 @@ class ProductController extends Controller
                     parsepDataC(pData, product);
                 }
                 </script>";
+                }
                 }
             }
         } else {

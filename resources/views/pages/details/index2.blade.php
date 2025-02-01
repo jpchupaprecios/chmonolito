@@ -1,3 +1,6 @@
+<link rel="stylesheet" href="/g/fancybox/jquery.fancybox.css">
+<script src="/g/jq.js"></script>
+<script src="/g/fancybox/jquery.fancybox.js"></script>
 <!-- breadcrumb -->
 <div class="grid md:grid-cols-2 gap-8">
     <!--<div>
@@ -16,9 +19,9 @@
         </div>
     </div>-->
     <div>
-        <div style="width: 550px; height: 550px; position: relative;">
+        <div id="wrapper-main-img" style="width: 550px; height: 550px; position: relative;">
 
-            <!-- Imagen principal -->
+
             <div class="skeleton image-placeholder"></div>
             <img
                 class="product-data-image rounded-lg"
@@ -29,10 +32,8 @@
                 style="display:none; position: absolute; height: 100%; width: 100%; inset: 0px; object-fit: cover; color: transparent;"
             >
         </div>
-
         <!-- Thumbnails -->
         <div id="thumbnails-wrapper" class="relative w-20 h-20">
-
 
         </div>
 

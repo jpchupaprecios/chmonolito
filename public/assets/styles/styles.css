@@ -290,3 +290,12 @@ body {
 .product-data-title{
     font-size: 20px !important;
 }
+
+.pics a.full{
+    position: absolute;
+    top: 0;
+    left: 108px;
+    width: 1000px;
+    display: block;
+    top: 10px;
+}
