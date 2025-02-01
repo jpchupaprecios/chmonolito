@@ -26,6 +26,11 @@ final class ChapiAmazonWebContentService extends WebContentService
      */
     public static function scrape($url, $cookie = null, $userAgent = "", $clean = true, $debug = false): false|array|string
     {
+
+        $goServiceUrl = "http://localhost:8080/scrape?url=" . urlencode($url) . "&cookie=" . urlencode($cookie) . "&userAgent=" . urlencode($userAgent);
+        $response = file_get_contents($goServiceUrl);
+        return $response;
+
         $headers = [
             'Connection: keep-alive',
             'Accept: */*',

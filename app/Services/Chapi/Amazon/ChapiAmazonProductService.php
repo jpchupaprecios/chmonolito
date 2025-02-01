@@ -56,6 +56,7 @@ final class ChapiAmazonProductService implements ProductServiceInterface
                 $this->user_agent = $scrapingSession->user_agent;
             }
         }
+
 		$dom = $this->fetchProductDetails($request, $productId);
 
 		return $this->productDetailParser->parse($dom, $vendor, $productId, $this->cookie, $getRelatedProducts, $getHtml);
