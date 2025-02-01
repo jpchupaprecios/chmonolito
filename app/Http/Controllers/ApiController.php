@@ -199,10 +199,15 @@ final class ApiController extends Controller
     }
 
 
-    public function product(Request $request, $productId, $vendor): JsonResponse
+    public function product(Request $request, $productId, $vendor, $engine = "direct", $csi=null): JsonResponse
     {
         $engineId = "direct";
+
         $ci =  $request->input('ci', "");
+
+        if(!$ci && $csi){
+            $ci = $csi;
+        }
         try {
             $getRelatedProducts = $request->input('getRelatedProducts', false) === 'true';
             $getHtml = $request->input('getHtml', false) === 'true';
@@ -266,7 +271,7 @@ final class ApiController extends Controller
                     if($this->cacheEnable){
                         $product->save();
                     }
-                    
+
                     return response()->json(['status' => self::STATUS_OK, 'data' => $product])->setStatusCode(
                         ResponseAlias::HTTP_OK,
                         Response::$statusTexts[ResponseAlias::HTTP_OK]

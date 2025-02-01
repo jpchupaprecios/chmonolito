@@ -55,7 +55,7 @@ Route::post('/register', [RegisterController::class, 'store'])->name('register.p
 | API
 |--------------------------------------------------------------------------
 */
-Route::get('/api/product/{productId}/{vendor}', [ApiController::class, 'product']);
+Route::get('/api/product/{productId}/{vendor}/{engine?}/{csi?}', [ApiController::class, 'product']);
 Route::get('/api/exchange', [ExchangeController::class, 'syncExchange']);
 /*
 |--------------------------------------------------------------------------

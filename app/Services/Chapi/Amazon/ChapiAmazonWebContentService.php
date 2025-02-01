@@ -26,137 +26,114 @@ final class ChapiAmazonWebContentService extends WebContentService
      */
     public static function scrape($url, $cookie = null, $userAgent = "", $clean = true, $debug = false): false|array|string
     {
-        $debug = false;//self::getDebug($debug);
-
-        $debugging = [];
-        if ($debug) {
-            $debugging['methods']['scrape']['benckmark']['start_scraping'] = microtime(true);
-            $debugging['methods']['scrape']['path'] = 'app/Services/Chapi/Amazon/ChapiAmazonWebContentService';
-        }
-
-        /*$proxyHost = env('OXYLABS_PROXY');
-        $proxyPort = env('OXULABS_PORT');
-        $proxyUser = env('OXYLABS_USER_US');
-        $proxyPass = env('OXYLABS_PASS');*/
-
-        if(!$userAgent){
-            $userAgent = self::getUserAgent();
-        }
         $headers = [
             'Connection: keep-alive',
             'Accept: */*',
             'Content-Language: es-US',
-            'User-Agent: ' . $userAgent,
+            'User-Agent: ' . self::getUserAgent(),
         ];
 
-        $proxyUrl = env('OXYLABS_PROXY_URL');
+        $proxies = [
+            [
+                'host' => 'dc.oxylabs.io',
+                'port' => 8000,
+                'user' => 'user-chupaprecios_lDWEa-country-US',
+                'pass' => '+Aq1w2e3r4t5'
+            ],
+            [
+                'host' => 'pr.oxylabs.io',
+                'port' => 7777,
+                'user' => 'customer-jotapey3_qcf4a-cc-us',
+                'pass' => '+Aq1w2e3r4t5'
+            ],
+        ];
 
+        $multiCurl = curl_multi_init();
+        $handles = [];
+        $winnerHandle = null;
+        $firstValidResponse = false;
+        $response = false;
 
-        /**/
-        $proxyHost = env('OXYLABS_PROXY');
-        $proxyPort = env('OXULABS_PORT');
-        $proxyUser = env('OXYLABS_USER_US');
-        $proxyPass = env('OXYLABS_PASS');
-        $useProxy = env('USE_PROXY');
+        foreach ($proxies as $proxy) {
+            $curl = curl_init($url);
+            curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
 
-        /**/
+            if ($cookie) {
+                curl_setopt($curl, CURLOPT_HTTPHEADER, self::getHeaders($cookie, $userAgent));
+            }
 
-        $curl = curl_init($url);
-        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($curl, CURLOPT_HTTPHEADER, self::getHeaders($cookie, $userAgent));
+            // Configurar proxy
+            curl_setopt($curl, CURLOPT_PROXY, $proxy['host']);
+            curl_setopt($curl, CURLOPT_PROXYPORT, $proxy['port']);
+            curl_setopt($curl, CURLOPT_PROXYUSERPWD, $proxy['user'] . ':' . $proxy['pass']);
 
-        curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
-
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-        $cookieName = date('Y-m-d') . 'amazon';
-        curl_setopt($curl, CURLOPT_COOKIEFILE, storage_path('app/' . $cookieName . '.txt'));
-        curl_setopt($curl, CURLOPT_COOKIEJAR, storage_path('app/' . $cookieName . '.txt'));
-
-        if($useProxy){
-            curl_setopt($curl, CURLOPT_PROXY, $proxyHost);
-            curl_setopt($curl, CURLOPT_PROXYPORT, $proxyPort);
-            curl_setopt($curl, CURLOPT_PROXYUSERPWD, $proxyUser . ':' . $proxyPass);
+            // Agregar el handle al multi-cURL
+            curl_multi_add_handle($multiCurl, $curl);
+            $handles[] = $curl;
         }
 
-        $response = curl_exec($curl);
-        if ($debug) {
-            $debugging['methods']['scrape']['benckmark']['end_scraping'] = microtime(true);
-            $debugging['methods']['scrape']['benckmark']['scraping_result'] = $debugging['methods']['scrape']['benckmark']['end_scraping'] - $debugging['methods']['scrape']['benckmark']['start_scraping'];
-        }
-        $res = [];
-        try {
-            if ($response === false) {
-                $useProxy = env('USE_PROXY');
-                $debugging['methods']['scrape']['reintento'] = true;
-                $error = curl_error($curl);
-                curl_close($curl);
+        // Ejecutar las solicitudes en paralelo
+        do {
+            $status = curl_multi_exec($multiCurl, $active);
+            curl_multi_select($multiCurl, 0.2); // Pequeño timeout para no bloquear
 
-                curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-                curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
-                curl_setopt($curl, CURLOPT_HTTPHEADER, self::getHeaders($cookie));
+            // Verificar si alguna solicitud ha terminado
+            while ($info = curl_multi_info_read($multiCurl)) {
+                $handle = $info['handle'];
+                $result = curl_multi_getcontent($handle);
 
-                if($useProxy){
-                    curl_setopt($curl, CURLOPT_PROXY, $proxyUrl);
+                // Verificar si la respuesta está bloqueada
+                $decodedResponse = self::decodeChapiDirectCall($url, $result, $clean);
+
+                if ($decodedResponse['response'] !== 'unauthorized' && !$firstValidResponse) {
+                    $firstValidResponse = true;
+                    $winnerHandle = $handle;
+                    $response = $decodedResponse['response'];
+                    if($response){
+                        // Cerrar todos los handles de cURL antes de retornar
+                        foreach ($handles as $curlHandle) {
+                            if ($curlHandle !== $winnerHandle) {
+                                curl_multi_remove_handle($multiCurl, $curlHandle);
+                                curl_close($curlHandle);
+                            }
+                        }
+
+                        // Cerrar el handle ganador
+                        curl_multi_remove_handle($multiCurl, $winnerHandle);
+                        curl_close($winnerHandle);
+
+                        // Cerrar el multi-cURL
+                        curl_multi_close($multiCurl);
+
+                        return $response;
+                    }
                 }
 
-                $response = curl_exec($curl);
-                curl_close($curl);
-            }
-
-            if ($response === false) {
-                Log::debug('response equals false');
-                $debugging['methods']['scrape']['falla scraping'] = true;
-                $error = curl_error($curl);
-                curl_close($curl);
-                if ($debug) {
-                    $res['debugging'] = $debugging;
+                // Cerrar los handles que no sean el ganador
+                if ($handle !== $winnerHandle) {
+                    curl_multi_remove_handle($multiCurl, $handle);
+                    curl_close($handle);
                 }
-                return $res;
             }
-            curl_close($curl);
-            $tmpResponse = $response;
+        } while ($active && $status == CURLM_OK);
 
-
-            if ($debug) {
-                $debugging['methods']['scrape']['benckmark']['start_global_decode'] = microtime(true);
+        // Cerrar todos los handles restantes
+        foreach ($handles as $handle) {
+            if ($handle !== $winnerHandle) {
+                curl_multi_remove_handle($multiCurl, $handle);
+                curl_close($handle);
             }
-            $result = self::decodeChapiDirectCall($url, $response, $clean);
-
-            $res['result'] = $result['response'];
-            if ($debug) {
-                $debugging = array_merge($debugging, $result['debbuging']);
-                $debugging['methods']['scrape']['benckmark']['end_global_decode'] = microtime(true);
-                $debugging['methods']['scrape']['benckmark']['global_decode_result'] = $debugging['methods']['scrape']['benckmark']['end_global_decode'] - $debugging['methods']['scrape']['benckmark']['start_global_decode'];
-            }
-
-
-            if ($debug) {
-                $res['debugging'] = $debugging;
-            }
-
-            if(isset($res["result"])){
-                $res = $res["result"];
-            }
-
-            if(is_string($res)){
-                $body = preg_replace('/\s\s+/', '', $res);
-                $body = preg_replace('/\n/', '', $body);
-                Log::debug('Response return body');
-                return $body;
-            }
-
-            if(is_array($res)){
-                Log::debug('Response return array');
-                return $res;
-            }
-            Log::debug('Response return false');
-            return false;
-        } catch (Exception $e) {
-            curl_close($curl);
-            return false;
         }
 
-        curl_close($curl);
+        // Cerrar el multi-cURL
+        curl_multi_close($multiCurl);
+
+        // Procesar la respuesta
+        if ($response !== false) {
+            return $response;
+        }
+
         return false;
     }
 
@@ -202,9 +179,7 @@ final class ChapiAmazonWebContentService extends WebContentService
 
         if ($clean) {
             $cleanResponse = str_replace(["\r", "\n", '&&&'], ['', '', ','], $response);
-
-            $ret['response'] = $cleanResponse;
-            return $ret;
+            return ['response' => $cleanResponse];
         }
 
         return ['response' => $response];
