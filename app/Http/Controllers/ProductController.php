@@ -40,8 +40,6 @@ class ProductController extends Controller
         if($content){
             $searchWrapper = file_get_contents(resource_path('views/pages/details/index2.blade.php'));
             $layoutStart = str_replace('{{ //CONTENT}}', $searchWrapper, $layoutStart);
-        }else{
-            $layoutStart = str_replace('{{ //CONTENT}}', "", $layoutStart);
         }
         $layoutStart = str_replace('{{ //selectedVariantAsin}}', $id, $layoutStart);
 
@@ -192,6 +190,16 @@ class ProductController extends Controller
             $urlIframe = '<iframe scrolling="no" style="width: 100%;height: 563px;" src="http://laravel11.local/productb/'.$id.'/amazon/'.$csi . '" ></iframe>';
             $layoutStart = str_replace('{{ //IFRAME}}', $urlIframe, $layoutStart);
         }
+
+
+        $breadcrumb = file_get_contents(resource_path('views/pages/details/components/breadcrumb.blade.php'));
+        $layoutStart = str_replace('<!-- breadcrumb -->', $breadcrumb, $layoutStart);
+
+        $searchWrapper = file_get_contents(resource_path('views/pages/details/index4.blade.php'));
+        $layoutStart = str_replace('{{ //CONTENT}}', $searchWrapper, $layoutStart);
+        $layoutStart = str_replace('{{ //selectedVariantAsin}}', $id, $layoutStart);
+
+
         echo $layoutStart;
         //flush();
 
