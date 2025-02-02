@@ -179,24 +179,24 @@ class ProductController extends Controller
 
     public function index(Request $request, $id, $vendor, $csi = null){
         // Configura las cabeceras para streaming
-        header('Content-Type: text/html; charset=UTF-8');
-        header('Cache-Control: no-cache');
-        header('X-Accel-Buffering: no');
-        header('Transfer-Encoding: chunked');
-        header('Connection: keep-alive');
+        //header('Content-Type: text/html; charset=UTF-8');
+        //header('Cache-Control: no-cache');
+        //header('X-Accel-Buffering: no');
+        //header('Transfer-Encoding: chunked');
+        //header('Connection: keep-alive');
 
         // Imprimimos el layout base
         $layoutStart = $this->showLayout($id, false);
 
         if($csi){
-            $urlIframe = '<iframe style="width: 100%;height: 563px;" src="http://laravel11.local/productb/'.$id.'/amazon/'.$csi . '" >';
+            $urlIframe = '<iframe scrolling="no" style="width: 100%;height: 563px;" src="http://laravel11.local/productb/'.$id.'/amazon/'.$csi . '" ></iframe>';
             $layoutStart = str_replace('{{ //IFRAME}}', $urlIframe, $layoutStart);
         }
         echo $layoutStart;
-        flush();
+        //flush();
 
-        echo str_repeat(" ", 1024);
-        flush();
+        //echo str_repeat(" ", 1024);
+        //flush();
 
         $url = 'https://www.amazon.com/dp/' . $id;
         $cookieName = date('Y-m-d') . '-amazon';
@@ -235,13 +235,12 @@ class ProductController extends Controller
 
         // Cerramos el HTML, footer y flush final
         $endLayout = file_get_contents(resource_path('views/layouts/layoutEnd.blade.php'));
-        $footer = file_get_contents(resource_path('views/components/footer.blade.php'));
+        $footer    = file_get_contents(resource_path('views/components/footer.blade.php'));
         $endLayout = str_replace('{{ //QUERY }}', 'pid=' . $id, $endLayout);
         $endLayout = str_replace('{{ //FOOTER}}', $footer, $endLayout);
 
         echo $endLayout;
-        flush();
-        //$this->scrape($request, $id, $vendor, $csi);
+        return false;
     }
 
     public function scrape(Request $request, $id, $vendor, $csi = null)
@@ -732,9 +731,9 @@ class ProductController extends Controller
 
         // Cerramos el HTML, footer y flush final
         $endLayout = file_get_contents(resource_path('views/layouts/layoutEnd.blade.php'));
-        $footer = file_get_contents(resource_path('views/components/footer.blade.php'));
+        //$footer = file_get_contents(resource_path('views/components/footer.blade.php'));
         $endLayout = str_replace('{{ //QUERY }}', 'pid=' . $id, $endLayout);
-        $endLayout = str_replace('{{ //FOOTER}}', $footer, $endLayout);
+        $endLayout = str_replace('{{ //FOOTER}}', "", $endLayout);
 
         echo $endLayout;
         flush();
