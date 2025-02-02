@@ -65,6 +65,7 @@ Route::get('/api/exchange', [ExchangeController::class, 'syncExchange']);
 Route::get('/', [HomeController::class, 'index']);
 Route::get('/results/{csi}', [ResultController::class, 'index']);
 Route::get('/product/{id}/{vendor}/{csi?}', [ProductController::class, 'index']);
+Route::get('/productb/{id}/{vendor}/{csi?}', [ProductController::class, 'scrape']);
 Route::get('/cart', [CartController::class, 'index']);
 Route::get('/checkout', [CheckoutController::class, 'index']);
 Route::get('/success', [CheckoutController::class, 'success']);

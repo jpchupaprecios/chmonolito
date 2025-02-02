@@ -19,12 +19,12 @@ class ProductController extends Controller
     private static $userAgent;
     protected const COOKIE_PATH = 'app/';
 
-    private function showLayout($id){
+    private function showLayout($id, $content = true){
         $layoutStart = file_get_contents(resource_path('views/layouts/layoutStart.blade.php'));
         $layoutStart = $this->showMarquee($layoutStart);
         $layoutStart = $this->showHeader($layoutStart);
         $layoutStart = $this->showCategories($layoutStart);
-        $layoutStart = $this->showSearchWrapper($layoutStart, $id);
+        $layoutStart = $this->showSearchWrapper($layoutStart, $id, $content);
         $layoutStart = $this->showFav($layoutStart);
         $layoutStart = $this->showBreadcrumb($layoutStart);
         $layoutStart = $this->showQuantityControls($layoutStart);
@@ -32,12 +32,20 @@ class ProductController extends Controller
         return $layoutStart;
     }
 
-    private function showSearchWrapper($layoutStart, $id){
-        $searchWrapper = file_get_contents(resource_path('views/pages/details/index2.blade.php'));
-        $searchBar = file_get_contents(resource_path('views/components/search.blade.php'));
+    private function showSearchWrapper($layoutStart, $id, $content = true){
+
+            $searchBar = file_get_contents(resource_path('views/components/search.blade.php'));
         $layoutStart = str_replace('{{ //SEARCH}}', $searchBar, $layoutStart);
-        $layoutStart = str_replace('{{ //CONTENT}}', $searchWrapper, $layoutStart);
+
+        if($content){
+            $searchWrapper = file_get_contents(resource_path('views/pages/details/index2.blade.php'));
+            $layoutStart = str_replace('{{ //CONTENT}}', $searchWrapper, $layoutStart);
+        }else{
+            $layoutStart = str_replace('{{ //CONTENT}}', "", $layoutStart);
+        }
         $layoutStart = str_replace('{{ //selectedVariantAsin}}', $id, $layoutStart);
+
+
         //CONTENT
 
         return $layoutStart;
@@ -169,7 +177,74 @@ class ProductController extends Controller
         return $colorsDiv;
     }
 
-    public function index(Request $request, $id, $vendor, $csi = null)
+    public function index(Request $request, $id, $vendor, $csi = null){
+        // Configura las cabeceras para streaming
+        header('Content-Type: text/html; charset=UTF-8');
+        header('Cache-Control: no-cache');
+        header('X-Accel-Buffering: no');
+        header('Transfer-Encoding: chunked');
+        header('Connection: keep-alive');
+
+        // Imprimimos el layout base
+        $layoutStart = $this->showLayout($id, false);
+
+        if($csi){
+            $urlIframe = '<iframe style="width: 100%;height: 563px;" src="http://laravel11.local/productb/'.$id.'/amazon/'.$csi . '" >';
+            $layoutStart = str_replace('{{ //IFRAME}}', $urlIframe, $layoutStart);
+        }
+        echo $layoutStart;
+        flush();
+
+        echo str_repeat(" ", 1024);
+        flush();
+
+        $url = 'https://www.amazon.com/dp/' . $id;
+        $cookieName = date('Y-m-d') . '-amazon';
+
+        if ($csi) {
+            $scrapingSession = ScrapingSession::where("client_session_id", $csi)->first();
+
+            if ($scrapingSession) {
+                $cookie = ($scrapingSession->amazon_cookie) ? $scrapingSession->amazon_cookie : "";
+                self::$userAgent = ($scrapingSession->user_agent) ? $scrapingSession->user_agent : "";
+            }
+
+            if (!$scrapingSession) {
+                $scrapingSession = new ScrapingSession();
+                $cookies = SymfonyPanther::getCookies($url);
+                if ($cookies) {
+                    $userAgent = $cookies["user-agent"];
+                    $cookies = $cookies["cookies"];
+
+                    $scrapingSession->client_session_id = $csi;
+                    $cookieStr = "";
+                    foreach ($cookies as $cookie) {
+                        $cookieStr .= $cookie . ";";
+                    }
+                    $scrapingSession->amazon_cookie = $cookieStr;
+                    $scrapingSession->user_agent = $userAgent;
+                    $scrapingSession->save();
+
+                    if ($scrapingSession) {
+                        $cookie = ($scrapingSession->amazon_cookie) ? $scrapingSession->amazon_cookie : "";
+                        self::$userAgent = ($scrapingSession->user_agent) ? $scrapingSession->user_agent : "";
+                    }
+                }
+            }
+        }
+
+        // Cerramos el HTML, footer y flush final
+        $endLayout = file_get_contents(resource_path('views/layouts/layoutEnd.blade.php'));
+        $footer = file_get_contents(resource_path('views/components/footer.blade.php'));
+        $endLayout = str_replace('{{ //QUERY }}', 'pid=' . $id, $endLayout);
+        $endLayout = str_replace('{{ //FOOTER}}', $footer, $endLayout);
+
+        echo $endLayout;
+        flush();
+        //$this->scrape($request, $id, $vendor, $csi);
+    }
+
+    public function scrape(Request $request, $id, $vendor, $csi = null)
     {
         $product = false;
 
@@ -181,7 +256,31 @@ class ProductController extends Controller
         header('Connection: keep-alive');
 
         // Imprimimos el layout base
-        echo $this->showLayout($id);
+        $layoutStart = file_get_contents(resource_path('views/layouts/layoutStart.blade.php'));
+
+        //$layoutStart = $this->showMarquee($layoutStart);
+        //$layoutStart = $this->showHeader($layoutStart);
+        //$layoutStart = $this->showCategories($layoutStart);
+        //$layoutStart = $this->showSearchWrapper($layoutStart, $id, $csi);
+
+        $searchWrapper = file_get_contents(resource_path('views/pages/details/index3.blade.php'));
+        $searchBar = file_get_contents(resource_path('views/components/search.blade.php'));
+        $layoutStart = str_replace('{{ //SEARCH}}', "", $layoutStart);
+        $layoutStart = str_replace('{{ //MARQUEE }}', "", $layoutStart);
+        $layoutStart = str_replace('{{ //HEADER }}', "", $layoutStart);
+        $layoutStart = str_replace('{{ //IFRAME}}', "", $layoutStart);
+        $layoutStart = str_replace('{{ //CATEGORIES}}', "", $layoutStart);
+        $layoutStart = str_replace('{{ //CONTENT}}', $searchWrapper, $layoutStart);
+        $layoutStart = str_replace('{{ //selectedVariantAsin}}', $id, $layoutStart);
+        //CONTENT
+
+        echo $layoutStart;
+        flush();
+
+        $layoutStart = $this->showFav($layoutStart);
+        $layoutStart = $this->showBreadcrumb($layoutStart);
+        $layoutStart = $this->showQuantityControls($layoutStart);
+
         flush();
 
         // Añadimos un pequeño relleno para forzar el envío de datos
@@ -836,7 +935,6 @@ class ProductController extends Controller
 
     // Mostrar/ocultar opciones
     sizeSelectButton'.$itera.'.addEventListener("click", () => {
-    console.log("a");
         sizeOptions'.$itera.'.classList.toggle("hidden")
     })';
 
