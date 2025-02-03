@@ -380,7 +380,6 @@ class ProductController extends Controller
         $winnerHandle = null;
         $firstValidResponse = false;
         $buffer = '';  // Buffer global para el parser, si se requiere
-        //$nombreArchivo = date("Y-m-d") . "-amazon-" . $id . ".html";
         Log::debug("hasta aca 2");
         if (!$product) {
             foreach ($proxies as $proxy) {
@@ -416,7 +415,7 @@ class ProductController extends Controller
                         &$product
                     ) {
                         //crea el archivo $nombreArchivo en la carpeta public con extension html y va agregando el $chunk en cada iteracion
-                        //file_put_contents(public_path($nombreArchivo), $chunk, FILE_APPEND);
+
                         // Si ya se obtuvo una respuesta válida, abortamos los otros handles.
                         if ($firstValidResponse && $ch !== $winnerHandle) {
                             return 0;

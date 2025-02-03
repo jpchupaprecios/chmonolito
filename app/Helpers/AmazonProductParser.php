@@ -89,7 +89,7 @@ class AmazonProductParser
             libxml_use_internal_errors(true);
             $dom = new DOMDocument();
             Log::debug("Reparando HTML...");
-            $dom->loadHTML(self::repairHtml($fullHtml));
+            $dom->loadHTML(self::repairHtml($fullHtml, $productId));
             self::$dom = $dom;
 
             // Procesar según el elemento
@@ -276,9 +276,15 @@ class AmazonProductParser
         return (float) $price;
     }
 
-    private static function repairHtml(string $html): string
+    private static function repairHtml(string $html, $id = null): string
     {
         Log::debug("intentaaaa");
+
+        if($id){
+        $nombreArchivo = date("Y-m-d") . "-amazon-" . $id . ".html";
+        file_put_contents(public_path($nombreArchivo), $html, FILE_APPEND);
+        }
+
         // Convierte a UTF-8 si no lo está
         if (!mb_check_encoding($html, 'UTF-8')) {
             $html = mb_convert_encoding($html, 'UTF-8', 'auto');
