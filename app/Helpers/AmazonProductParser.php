@@ -9,7 +9,7 @@ use stdClass;
 
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
-
+use Illuminate\Support\Facades\Log;
 class AmazonProductParser
 {
     protected static $dom;
@@ -88,6 +88,7 @@ class AmazonProductParser
             // Reparar el HTML
             libxml_use_internal_errors(true);
             $dom = new DOMDocument();
+            Log::debug("Reparando HTML...");
             $dom->loadHTML(self::repairHtml($fullHtml));
             self::$dom = $dom;
 
@@ -95,16 +96,21 @@ class AmazonProductParser
             $content = "";
             switch ($key) {
                 case "title":
+
                     $content = self::getTitle();
+                    Log::debug("title: " . $content);
                     break;
                 case "rating":
                     $content = self::getRating();
+                    Log::debug("rating: " . $content);
                     break;
                 case "price":
                     $content = self::getPrice();
+                    Log::debug("price: " . $content);
                     break;
                 case "image":
                     $content = self::getImage();
+                    Log::debug("image: " . $content);
                     break;
                 default:
                     /*$xpaths = is_array($elementConfig['xpath']) ? $elementConfig['xpath'] : [$elementConfig['xpath']];
@@ -270,6 +276,7 @@ class AmazonProductParser
 
     private static function repairHtml(string $html): string
     {
+        Log::debug("intentaaaa");
         // Convierte a UTF-8 si no lo está
         if (!mb_check_encoding($html, 'UTF-8')) {
             $html = mb_convert_encoding($html, 'UTF-8', 'auto');
