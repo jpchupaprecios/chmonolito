@@ -53,7 +53,7 @@ class SymfonyPanther
                 'user' => 'user-chupaprecios_lDWEa-country-US',
                 'pass' => '+Aq1w2e3r4t5'
             ],
-            [
+            /*[
                 'host' => 'us-pr.oxylabs.io',
                 'port' => 10000,
                 'user' => 'customer-chupaprecios_COPc9_K2KrH',
@@ -70,7 +70,7 @@ class SymfonyPanther
                 'port' => 7777,
                 'user' => 'customer-jotapey2_Kr8Ew-cc-us',
                 'pass' => '2H5zdvxVQff'
-            ]
+            ]*/
         ];
 
         // Configuración común para todas las solicitudes
@@ -233,7 +233,7 @@ class SymfonyPanther
         ];
 
         // Selección de dispositivo basada en pesos
-        $isMobile = self::weightedRandom($deviceWeights) === 'mobile';
+        $isMobile = false;//self::weightedRandom($deviceWeights) === 'mobile';
         $os = $isMobile ? $mobileOs[array_rand($mobileOs)] : $desktopOs[array_rand($desktopOs)];
 
         // Selección de navegador basada en pesos
