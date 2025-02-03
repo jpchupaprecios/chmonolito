@@ -422,7 +422,7 @@ class ProductController extends Controller
 
                         // Procesar thumbs
                         if (!$imagesThumb && strpos($chunk, '[{"hiRes') !== false) {
-                            Log::debug($chunk);
+                            //Log::debug($chunk);
                             $thumbsChunks .= $chunk;
                             $imagesThumb = self::getImages($thumbsChunks);
 
