@@ -270,6 +270,7 @@ class AmazonProductParser
 
     private static function repairHtml(string $html): string
     {
+        set_time_limit(120);
         // Convierte a UTF-8 si no lo está
         if (!mb_check_encoding($html, 'UTF-8')) {
             $html = mb_convert_encoding($html, 'UTF-8', 'auto');
