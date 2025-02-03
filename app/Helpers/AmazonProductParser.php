@@ -9,7 +9,7 @@ use stdClass;
 
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Log;
+
 class AmazonProductParser
 {
     protected static $dom;
@@ -88,7 +88,6 @@ class AmazonProductParser
             // Reparar el HTML
             libxml_use_internal_errors(true);
             $dom = new DOMDocument();
-            Log::debug("Reparando HTML...");
             $dom->loadHTML(self::repairHtml($fullHtml));
             self::$dom = $dom;
 
@@ -96,21 +95,16 @@ class AmazonProductParser
             $content = "";
             switch ($key) {
                 case "title":
-
-                    $content = self::getTitle($productId);
-                    Log::debug("title: " . $content);
+                    $content = self::getTitle();
                     break;
                 case "rating":
                     $content = self::getRating();
-                    Log::debug("rating: " . $content);
                     break;
                 case "price":
                     $content = self::getPrice();
-                    Log::debug("price: " . $content);
                     break;
                 case "image":
                     $content = self::getImage();
-                    Log::debug("image: " . $content);
                     break;
                 default:
                     /*$xpaths = is_array($elementConfig['xpath']) ? $elementConfig['xpath'] : [$elementConfig['xpath']];
@@ -147,34 +141,23 @@ class AmazonProductParser
         return $ratingElement ? floatval(trim($ratingElement->textContent)) : 0;
     }
 
-    private static function getTitle($id): string
+    private static function getTitle(): string
     {
         if (!self::$dom) {
-            Log::debug("no dom");
             return "";
         }
 
 
         $xpath = new DOMXPath(self::$dom);
-        $html = self::$dom->saveHTML();
-        if(strpos($html, '"productTitle"') !== false){
-            if($id){
-                Log::debug("si tiene title");
-                $nombreArchivo = date("Y-m-d") . "-amazon-" . $id . ".html";
-                file_put_contents(public_path($nombreArchivo), $html, FILE_APPEND);
-            }
-        }
 
         $titleElement = $xpath->query('//span[@id="productTitle"]')->item(0);
         $titleElement = $titleElement ? trim($titleElement->textContent) : '';
 
         if(!$titleElement){
-            Log::debug("no encontro title");
         }
 
         if($titleElement){
             $titleElement = utf8_decode($titleElement);
-            $titleElement = $titleElement;
         }
 
         return str_replace('%', ' Porciento ', $titleElement);
@@ -287,10 +270,6 @@ class AmazonProductParser
 
     private static function repairHtml(string $html): string
     {
-        Log::debug("intentaaaa");
-
-
-
         // Convierte a UTF-8 si no lo está
         if (!mb_check_encoding($html, 'UTF-8')) {
             $html = mb_convert_encoding($html, 'UTF-8', 'auto');

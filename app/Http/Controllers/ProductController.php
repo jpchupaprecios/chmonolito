@@ -14,7 +14,6 @@ use DOMXPath;
 use App\Models\Product;
 use App\Parsers\Chapi\Amazon\Complete\Product\ChapiAmazonProductDetailParser;
 use App\Helpers\Price;
-use Illuminate\Support\Facades\Log;
 class ProductController extends Controller
 {
     private static $userAgent;
@@ -253,7 +252,6 @@ class ProductController extends Controller
     public function scrape(Request $request, $id, $vendor, $csi = null)
     {
         $product = false;
-        Log::debug("hasta aca 1");
 
         // Configura encabezados básicos para la respuesta.
         // Se eliminó 'Transfer-Encoding: chunked' para que el servidor gestione el chunking.
@@ -380,7 +378,6 @@ class ProductController extends Controller
         $winnerHandle = null;
         $firstValidResponse = false;
         $buffer = '';  // Buffer global para el parser, si se requiere
-        Log::debug("hasta aca 2");
         if (!$product) {
             foreach ($proxies as $proxy) {
                 $curl = curl_init($url);
