@@ -7,6 +7,8 @@ namespace App\Parsers\Chapi\Amazon\Product;
 use App\Helpers\FixHtml;
 use App\Helpers\NotAllowed;
 use App\Helpers\Price;
+use App\Helpers\SymfonyPanther;
+use App\Models\ScrapingSession;
 use App\Services\CookieService;
 use App\Models\Product\ProductDetails;
 use App\Models\Product\Thumbnail;
@@ -335,14 +337,50 @@ final class ChapiAmazonProductDetailParser
      * @param $productId
      * @return DOMXPath|null
      */
-    private function getDomOffers($productId)
+    private function getDomOffers($productId, $csi = null)
     {
-        $this->cookie = $this->cookieService->getCookie();
+        $cookie = "";
+        $userAgent = "";
+        if ($csi) {
+            $scrapingSession = ScrapingSession::where("client_session_id", $csi)->first();
+
+            if ($scrapingSession) {
+                $cookie = ($scrapingSession->amazon_cookie) ? $scrapingSession->amazon_cookie : "";
+                self::$userAgent = ($scrapingSession->user_agent) ? $scrapingSession->user_agent : "";
+            }
+
+            if (!$scrapingSession) {
+                $scrapingSession = new ScrapingSession();
+                $cookies = SymfonyPanther::getCookies(
+                    'https://www.amazon.com/gp/product/ajax/ref=dp_aod_unknown_mbc?asin=' . $productId . '&m=&qid=&smid=&sourcecustomerorglistid=&sourcecustomerorglistitemid=&sr=&pc=dp&experienceId=aodAjaxMain'
+                );
+                if ($cookies) {
+                    $userAgent = $cookies["user-agent"];
+                    $cookies = $cookies["cookies"];
+
+                    $scrapingSession->client_session_id = $csi;
+                    $cookieStr = "";
+                    foreach ($cookies as $cookie) {
+                        $cookieStr .= $cookie . ";";
+                    }
+                    $scrapingSession->amazon_cookie = $cookieStr;
+                    $scrapingSession->user_agent = $userAgent;
+                    $scrapingSession->save();
+
+                    if ($scrapingSession) {
+                        $cookie = ($scrapingSession->amazon_cookie) ? $scrapingSession->amazon_cookie : "";
+                        $userAgent = ($scrapingSession->user_agent) ? $scrapingSession->user_agent : "";
+                    }
+                }
+            }
+        }
+
+        $this->cookie = $cookie;
 
         $response = (new ChapiAmazonWebContentService)->scrape(
             'https://www.amazon.com/gp/product/ajax/ref=dp_aod_unknown_mbc?asin=' . $productId . '&m=&qid=&smid=&sourcecustomerorglistid=&sourcecustomerorglistitemid=&sr=&pc=dp&experienceId=aodAjaxMain',
             $this->cookie,
-            false
+            $userAgent
         );
 
         $domOffersPrice = new DOMDocument();
