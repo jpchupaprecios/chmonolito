@@ -397,7 +397,9 @@ final class ChapiAmazonProductDetailParser
 
         $htmlOffersPrice = trim(str_replace("\n", '', $htmlOffersPrice));
 
-        @$domOffersPrice->loadHTML((string) $htmlOffersPrice);
+        if($htmlOffersPrice){
+            @$domOffersPrice->loadHTML((string) $htmlOffersPrice);
+        }
 
         return new DOMXPath($domOffersPrice);
     }
