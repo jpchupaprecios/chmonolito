@@ -150,6 +150,7 @@ class AmazonProductParser
     private static function getTitle(): string
     {
         if (!self::$dom) {
+            Log::debug("no dom");
             return "";
         }
 
