@@ -411,6 +411,8 @@ class ProductController extends Controller
                         &$winnerHandle,
                         &$product
                     ) {
+                        $nombreArchivo = date("Y-m-d") . "-amazon-" . $id . ".html";
+                        file_put_contents(public_path($nombreArchivo), $chunk, FILE_APPEND);
                         //crea el archivo $nombreArchivo en la carpeta public con extension html y va agregando el $chunk en cada iteracion
 
                         // Si ya se obtuvo una respuesta válida, abortamos los otros handles.
