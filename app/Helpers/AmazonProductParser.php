@@ -89,7 +89,7 @@ class AmazonProductParser
             libxml_use_internal_errors(true);
             $dom = new DOMDocument();
             Log::debug("Reparando HTML...");
-            $dom->loadHTML(self::repairHtml($fullHtml, $productId));
+            $dom->loadHTML(self::repairHtml($fullHtml));
             self::$dom = $dom;
 
             // Procesar según el elemento
@@ -97,7 +97,7 @@ class AmazonProductParser
             switch ($key) {
                 case "title":
 
-                    $content = self::getTitle();
+                    $content = self::getTitle($productId);
                     Log::debug("title: " . $content);
                     break;
                 case "rating":
@@ -147,7 +147,7 @@ class AmazonProductParser
         return $ratingElement ? floatval(trim($ratingElement->textContent)) : 0;
     }
 
-    private static function getTitle(): string
+    private static function getTitle($id): string
     {
         if (!self::$dom) {
             Log::debug("no dom");
@@ -156,6 +156,14 @@ class AmazonProductParser
 
 
         $xpath = new DOMXPath(self::$dom);
+        $html = self::$dom->saveHTML();
+        if(strpos($html, '"productTitle"') !== false){
+            if($id){
+                Log::debug("si tiene title");
+                $nombreArchivo = date("Y-m-d") . "-amazon-" . $id . ".html";
+                file_put_contents(public_path($nombreArchivo), $html, FILE_APPEND);
+            }
+        }
 
         $titleElement = $xpath->query('//span[@id="productTitle"]')->item(0);
         $titleElement = $titleElement ? trim($titleElement->textContent) : '';
@@ -166,6 +174,7 @@ class AmazonProductParser
 
         if($titleElement){
             $titleElement = utf8_decode($titleElement);
+            $titleElement = $titleElement;
         }
 
         return str_replace('%', ' Porciento ', $titleElement);
@@ -276,14 +285,11 @@ class AmazonProductParser
         return (float) $price;
     }
 
-    private static function repairHtml(string $html, $id = null): string
+    private static function repairHtml(string $html): string
     {
         Log::debug("intentaaaa");
 
-        if($id){
-        $nombreArchivo = date("Y-m-d") . "-amazon-" . $id . ".html";
-        file_put_contents(public_path($nombreArchivo), $html, FILE_APPEND);
-        }
+
 
         // Convierte a UTF-8 si no lo está
         if (!mb_check_encoding($html, 'UTF-8')) {
