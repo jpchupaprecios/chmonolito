@@ -399,7 +399,7 @@ class ProductController extends Controller
                     CURLOPT_PROXY          => $proxy['host'],
                     CURLOPT_PROXYPORT      => $proxy['port'],
                     CURLOPT_PROXYUSERPWD   => $proxy['user'] . ':' . $proxy['pass'],
-                    CURLOPT_BUFFERSIZE     => 1024,
+                    CURLOPT_BUFFERSIZE     => 256,
                     CURLOPT_WRITEFUNCTION  => function ($ch, $chunk) use (
                         &$buffer,
                         &$datas,
