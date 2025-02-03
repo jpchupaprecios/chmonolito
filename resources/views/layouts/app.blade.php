@@ -22,6 +22,14 @@
 
     </head>
     <body class="f_SW50ZXI">
+    <div id="loading-wrapper" style="
+    height: 100%;
+    width: 100%;
+    background: black;
+    opacity: 0.3;
+    position: absolute;
+    z-index: 99999;
+"></div>
     <style type="text/tailwindcss">@layer base {
             * {
                 @apply border-border;

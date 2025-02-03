@@ -20,8 +20,12 @@
             return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         }
 
-        // Realiza la llamada AJAX
-        sendClientSessionId(clientSessionId);
+        let client_session_id_set = localStorage.getItem('client_session_id_set');
+        if(!client_session_id_set){
+            sendClientSessionId(clientSessionId);
+        }else{
+            document.getElementById("loading-wrapper").style.display = "none";
+        }
 
         function sendClientSessionId(clientSessionId) {
             fetch(`/bh/${clientSessionId}/`, {
@@ -34,12 +38,17 @@
                     if (!response.ok) {
                         throw new Error('Error en la solicitud');
                     }
+                    localStorage.setItem('client_session_id_set', "1");
+                    document.getElementById("loading-wrapper").style.display = "none";
                     return response.json(); // Procesa la respuesta como JSON si es necesario
                 })
                 .then(data => {
+                    localStorage.setItem('client_session_id_set', "1");
                     console.log('Respuesta del servidor:', data);
+                    document.getElementById("loading-wrapper").style.display = "none";
                 })
                 .catch(error => {
+                    document.getElementById("loading-wrapper").style.display = "none";
                     console.error('Error en la llamada AJAX:', error);
                 });
         }

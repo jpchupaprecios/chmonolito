@@ -52,7 +52,7 @@ class BehaviorController extends Controller
         }
 
         return response()->json([
-            'message' => 'Error starting scraping session'
+            'message' => ''
         ], 500);
     }
 
