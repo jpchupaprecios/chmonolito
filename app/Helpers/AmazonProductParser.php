@@ -161,6 +161,7 @@ class AmazonProductParser
         $titleElement = $titleElement ? trim($titleElement->textContent) : '';
 
         if(!$titleElement){
+            Log::debug("no encontro title");
         }
 
         if($titleElement){
