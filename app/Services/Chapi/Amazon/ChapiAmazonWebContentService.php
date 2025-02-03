@@ -64,6 +64,8 @@ final class ChapiAmazonWebContentService extends WebContentService
             curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
 
+            curl_setopt($curl, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
+
             if ($cookie) {
                 curl_setopt($curl, CURLOPT_HTTPHEADER, self::getHeaders($cookie, $userAgent));
             }

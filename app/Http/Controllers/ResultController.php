@@ -179,12 +179,13 @@ class ResultController extends Controller
                 CURLOPT_COOKIEJAR => $cookiePath,
                 CURLOPT_USERAGENT => self::getUserAgent(),
                 CURLOPT_TIMEOUT => 30,
+                CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
                 CURLOPT_CONNECTTIMEOUT => 5,
                 CURLOPT_ENCODING => '',
                 CURLOPT_PROXY => $proxy['host'],
                 CURLOPT_PROXYPORT => $proxy['port'],
                 CURLOPT_PROXYUSERPWD => $proxy['user'] . ':' . $proxy['pass'],
-                CURLOPT_BUFFERSIZE => 1024,
+                CURLOPT_BUFFERSIZE => 256,
                 CURLOPT_WRITEFUNCTION => function ($ch, $chunk) use (&$usedAsins, &$counter, &$bufferLimited, &$global, &$countParsedElements, &$countParsedElementsFail, &$firstValidResponse, &$winnerHandle, &$csi) {
                     // Si ya hay respuesta válida
                     if ($firstValidResponse) {

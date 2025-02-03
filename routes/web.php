@@ -71,6 +71,9 @@ Route::get('/checkout', [CheckoutController::class, 'index']);
 Route::get('/success', [CheckoutController::class, 'success']);
 Route::get('/mi-cuenta', [MyAccountIndexController::class, 'index']);
 
+Route::get('/check-single-proxy/{id}', [ProductController::class, 'checkSingleProxy']);
+Route::get('/check-multi-proxy/{id}', [ProductController::class, 'checkMultiProxy']);
+
 /*
 |--------------------------------------------------------------------------
 | RUTAS “DASHBOARD” DE USUARIO (JETSTREAM / SANCTUM, ETC.)
