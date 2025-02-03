@@ -11,35 +11,31 @@ use DOMXPath;
 use tidy;
 use App\Parsers\Chapi\Amazon\Results\ChapiAmazonResultParser;
 use App\Http\Controllers\BehaviorController;
+
 class ResultController extends Controller
 {
     protected const COOKIE_PATH = 'app/';
 
-    private static  $userAgent;
+    private static $userAgent;
+
     private function showLayout(){
         $layoutStart = file_get_contents(resource_path('views/layouts/layoutStart.blade.php'));
         $layoutStart = $this->showMarquee($layoutStart);
         $layoutStart = $this->showHeader($layoutStart);
         $layoutStart = $this->showCategories($layoutStart);
         $layoutStart = $this->showSearchWrapper($layoutStart);
-
         return $layoutStart;
     }
-
-
 
     private function showSearchWrapper($layoutStart){
         $searchWrapper = file_get_contents(resource_path('views/pages/result/index2.blade.php'));
         $searchBar = file_get_contents(resource_path('views/components/search.blade.php'));
         $layoutStart = str_replace('{{ //SEARCH}}', $searchBar, $layoutStart);
         $layoutStart = str_replace('{{ //CONTENT}}', $searchWrapper, $layoutStart);
-        //CONTENT
 
         $pagination = file_get_contents(resource_path('views/pages/result/components/pagination.blade.php'));
         $filters = file_get_contents(resource_path('views/pages/result/components/filters.blade.php'));
-        //remplazo {{ //FILTERS}}
         $layoutStart = str_replace('{{ //FILTERS}}', $filters, $layoutStart);
-        //remplazo {{ //PAGINATION}}
         $layoutStart = str_replace('{{ //PAGINATION }}', $pagination, $layoutStart);
         return $layoutStart;
     }
@@ -56,14 +52,12 @@ class ResultController extends Controller
 
         if($auth) {
             $lis = file_get_contents(resource_path('views/components/header2-loggedin.blade.php'));
-        }else{
+        } else {
             $lis = file_get_contents(resource_path('views/components/header2-guest.blade.php'));
         }
 
         $minicart = file_get_contents(resource_path('views/components/minicart.blade.php'));
-
         $lis = str_replace('{{ //MINICART }}', $minicart, $lis);
-
         $header = str_replace('{{ //LIS }}', $lis, $header);
         $layoutStart = str_replace('{{ //HEADER }}', $header, $layoutStart);
         return $layoutStart;
@@ -77,11 +71,9 @@ class ResultController extends Controller
 
     public function index(Request $request, $csi)
     {
-        // Configurar streaming y encabezados
+        // Configurar encabezados básicos. Se elimina 'Transfer-Encoding: chunked'
         header('Content-Type: text/html; charset=UTF-8');
         header('Cache-Control: no-cache');
-        header('X-Accel-Buffering: no');
-        header('Transfer-Encoding: chunked');
         header('Connection: keep-alive');
 
         echo $this->showLayout();
@@ -124,8 +116,9 @@ class ResultController extends Controller
             }
         }
 
-        // Enviar HTML inicial
+        // Enviar HTML inicial y forzar salida
         flush();
+
         $usedAsins = [];
         $counter = 0;
         $bufferLimited = "";
@@ -133,9 +126,9 @@ class ResultController extends Controller
         $countParsedElements = 0;
         $countParsedElementsFail = 0;
 
-        // Añadir un padding para evitar buffering
-        echo str_repeat(" ", 1024);
-        flush();
+        // Eliminamos el padding para evitar posibles problemas de formato
+        // echo str_repeat(" ", 1024);
+        // flush();
 
         $proxies = [
             [
@@ -145,23 +138,11 @@ class ResultController extends Controller
                 'pass' => '+Aq1w2e3r4t5'
             ],
             /*[
-                'host' => 'us-pr.oxylabs.io',
-                'port' => 10000,
-                'user' => 'customer-chupaprecios_COPc9_K2KrH',
-                'pass' => '+Aq1w2e3r4t5'
-            ],*/
-            [
                 'host' => 'pr.oxylabs.io',
                 'port' => 7777,
                 'user' => 'customer-jotapey3_qcf4a-cc-us',
                 'pass' => '+Aq1w2e3r4t5'
-            ],
-            /*[
-                'host' => 'pr.oxylabs.io',
-                'port' => 7777,
-                'user' => 'customer-jotapey2_Kr8Ew-cc-us',
-                'pass' => '2H5zdvxVQff'
-            ]*/
+            ],*/
         ];
 
         $multiCurl = curl_multi_init();
@@ -174,7 +155,7 @@ class ResultController extends Controller
             curl_setopt_array($curl, [
                 CURLOPT_HTTPHEADER => self::getHeaders($cookie),
                 CURLOPT_FOLLOWLOCATION => true,
-                CURLOPT_RETURNTRANSFER => false, // Deshabilita retorno automático
+                CURLOPT_RETURNTRANSFER => false, // Se usará WRITEFUNCTION para manejar la salida
                 CURLOPT_COOKIEFILE => $cookiePath,
                 CURLOPT_COOKIEJAR => $cookiePath,
                 CURLOPT_USERAGENT => self::getUserAgent(),
@@ -187,9 +168,8 @@ class ResultController extends Controller
                 CURLOPT_PROXYUSERPWD => $proxy['user'] . ':' . $proxy['pass'],
                 CURLOPT_BUFFERSIZE => 256,
                 CURLOPT_WRITEFUNCTION => function ($ch, $chunk) use (&$usedAsins, &$counter, &$bufferLimited, &$global, &$countParsedElements, &$countParsedElementsFail, &$firstValidResponse, &$winnerHandle, &$csi) {
-                    // Si ya hay respuesta válida
+                    // Si ya hay respuesta válida, abortamos los demás handles
                     if ($firstValidResponse) {
-                        // Abortamos cualquier handle que no sea el ganador
                         if ($ch !== $winnerHandle) {
                             return 0;
                         }
@@ -204,7 +184,6 @@ class ResultController extends Controller
                         }
                         $firstValidResponse = true;
 
-                        // Acumulamos el HTML de los productos
                         $productHtml = '';
                         foreach ($parsedProducts as $parsedProduct) {
                             $parsedProduct["csi"] = $csi;
@@ -213,18 +192,10 @@ class ResultController extends Controller
                             ])->render();
                         }
 
-                        // Enviamos el HTML acumulado
-                        echo "<script>document.querySelector('#product-container')
-        .insertAdjacentHTML('beforeend', `" . addslashes($productHtml) . "` );</script>";
-                        flush();
-
-                        // Agregamos un pequeño separador que ayude al navegador a "pintar"
-                        echo "<!-- chunk -->";
-                        echo str_repeat(" ", 1024);
+                        echo "<script>document.querySelector('#product-container').insertAdjacentHTML('beforeend', `" . addslashes($productHtml) . "` );</script>";
                         flush();
                     }
 
-                    // Devolvemos la cantidad de bytes procesados
                     return strlen($chunk);
                 }
             ]);
@@ -235,25 +206,19 @@ class ResultController extends Controller
 
         do {
             $status = curl_multi_exec($multiCurl, $active);
-            // Opcionalmente un pequeño timeout en select para no bloquear mucho
             curl_multi_select($multiCurl, 0.2);
 
-            // Si ya hay un handle ganador
             if ($firstValidResponse && $winnerHandle) {
-                // Quitar del multiCurl todos los demás
                 foreach ($handles as $curl) {
                     if ($curl !== $winnerHandle) {
                         curl_multi_remove_handle($multiCurl, $curl);
                         curl_close($curl);
                     }
                 }
-                // Dejamos en $handles solo el ganador
                 $handles = [$winnerHandle];
-                // No hacemos break, para terminar de leer el HTML completo
             }
         } while ($active && $status == CURLM_OK);
 
-        // Cerrar el handle final
         foreach ($handles as $curl) {
             curl_multi_remove_handle($multiCurl, $curl);
             curl_close($curl);
@@ -269,18 +234,16 @@ class ResultController extends Controller
             echo "<script>resultsC = JSON.parse('" . addslashes(json_encode($resultParse)) . "');</script>";
         }
 
-        // Finalizar la página HTML
         $endLayout = file_get_contents(resource_path('views/layouts/layoutEnd.blade.php'));
         $footer = file_get_contents(resource_path('views/components/footer.blade.php'));
         $endLayout = str_replace('{{ //QUERY }}', 'q=' . $query, $endLayout);
         $endLayout = str_replace('{{ //FOOTER}}', $footer, $endLayout);
         echo $endLayout;
-        flush(); // Asegurarse de enviar el contenido final
+        flush();
     }
 
     private static function repairHtml(string $html): string
     {
-        // Usa tidy si está disponible
         if (extension_loaded('tidy')) {
             $config = [
                 'indent' => true,
@@ -295,7 +258,6 @@ class ResultController extends Controller
             return $cleanHtml;
         }
 
-        // Fallback: Agregar etiquetas básicas si tidy no está disponible
         if (stripos($html, '<html') === false) {
             $html = "<html><body>{$html}</body></html>";
         }
