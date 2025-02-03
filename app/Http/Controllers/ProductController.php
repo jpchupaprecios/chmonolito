@@ -255,23 +255,18 @@ class ProductController extends Controller
     {
         $product = false;
 
-        // Configura las cabeceras para streaming
+        // Configura encabezados básicos para la respuesta.
+        // Se eliminó 'Transfer-Encoding: chunked' para que el servidor gestione el chunking.
         header('Content-Type: text/html; charset=UTF-8');
         header('Cache-Control: no-cache');
         header('X-Accel-Buffering: no');
-        header('Transfer-Encoding: chunked');
         header('Connection: keep-alive');
 
-        // Imprimimos el layout base
+        // Imprime el layout base
         $layoutStart = file_get_contents(resource_path('views/layouts/layoutStart.blade.php'));
 
-        //$layoutStart = $this->showMarquee($layoutStart);
-        //$layoutStart = $this->showHeader($layoutStart);
-        //$layoutStart = $this->showCategories($layoutStart);
-        //$layoutStart = $this->showSearchWrapper($layoutStart, $id, $csi);
-
+        // Se realizan reemplazos para dejar el layout listo.
         $searchWrapper = file_get_contents(resource_path('views/pages/details/index3.blade.php'));
-        $searchBar = file_get_contents(resource_path('views/components/search.blade.php'));
         $layoutStart = str_replace('{{ //SEARCH}}', "", $layoutStart);
         $layoutStart = str_replace('{{ //MARQUEE }}', "", $layoutStart);
         $layoutStart = str_replace('{{ //HEADER }}', "", $layoutStart);
@@ -279,22 +274,22 @@ class ProductController extends Controller
         $layoutStart = str_replace('{{ //CATEGORIES}}', "", $layoutStart);
         $layoutStart = str_replace('{{ //CONTENT}}', $searchWrapper, $layoutStart);
         $layoutStart = str_replace('{{ //selectedVariantAsin}}', $id, $layoutStart);
-        //CONTENT
 
         echo $layoutStart;
         flush();
 
+        // Se muestran elementos adicionales (favoritos, breadcrumb, controles, etc.)
         $layoutStart = $this->showFav($layoutStart);
         $layoutStart = $this->showBreadcrumb($layoutStart);
         $layoutStart = $this->showQuantityControls($layoutStart);
 
         flush();
 
-        // Añadimos un pequeño relleno para forzar el envío de datos
-        echo str_repeat(" ", 1024);
-        flush();
+        // Se elimina el relleno (echo str_repeat) para evitar interferir en el formato de la respuesta.
+        // echo str_repeat(" ", 1024);
+        // flush();
 
-        // Ajusta la URL y cookie
+        // Ajusta la URL y la cookie
         $url = 'https://www.amazon.com/dp/' . $id;
         $cookieName = date('Y-m-d') . '-amazon';
         $cookiePath = storage_path(self::COOKIE_PATH . $cookieName . '.txt');
@@ -333,14 +328,14 @@ class ProductController extends Controller
             }
         }
 
-        // Variables que usaremos para parsear
+        // Variables para parsear
         $datas = [
-            "title" => ["status" => "pending", "content" => ""],
-            "price" => ["status" => "pending", "content" => ""],
-            "image" => ["status" => "pending", "content" => ""],
-            "rating" => ["status" => "pending", "content" => ""],
-            "thumbs" => ["status" => "pending", "content" => ""],
-            "variant" => ["status" => "pending", "content" => ""],
+            "title"         => ["status" => "pending", "content" => ""],
+            "price"         => ["status" => "pending", "content" => ""],
+            "image"         => ["status" => "pending", "content" => ""],
+            "rating"        => ["status" => "pending", "content" => ""],
+            "thumbs"        => ["status" => "pending", "content" => ""],
+            "variant"       => ["status" => "pending", "content" => ""],
             "variant_color" => ["status" => "pending", "content" => ""],
         ];
 
@@ -366,12 +361,12 @@ class ProductController extends Controller
                 'user' => 'customer-chupaprecios_COPc9_K2KrH',
                 'pass' => '+Aq1w2e3r4t5'
             ],*/
-            [
+            /*[
                 'host' => 'pr.oxylabs.io',
                 'port' => 7777,
                 'user' => 'customer-jotapey3_qcf4a-cc-us',
                 'pass' => '+Aq1w2e3r4t5'
-            ],
+            ],*/
             /*[
                 'host' => 'pr.oxylabs.io',
                 'port' => 7777,
@@ -384,27 +379,27 @@ class ProductController extends Controller
         $handles = [];
         $winnerHandle = null;
         $firstValidResponse = false;
-        $buffer = '';  // si tu parser necesita un buffer global
+        $buffer = '';  // Buffer global para el parser, si se requiere
 
         if (!$product) {
             foreach ($proxies as $proxy) {
                 $curl = curl_init($url);
                 curl_setopt_array($curl, [
-                    CURLOPT_HTTPHEADER => self::getHeaders($cookie),
+                    CURLOPT_HTTPHEADER     => self::getHeaders($cookie),
                     CURLOPT_FOLLOWLOCATION => true,
-                    CURLOPT_RETURNTRANSFER => false, // Deshabilita retorno automático
-                    CURLOPT_COOKIEFILE => $cookiePath,
-                    CURLOPT_COOKIEJAR => $cookiePath,
-                    CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
-                    CURLOPT_USERAGENT => self::getUserAgent(),
-                    CURLOPT_TIMEOUT => 30,
+                    CURLOPT_RETURNTRANSFER => false, // Se usará WRITEFUNCTION para gestionar la salida
+                    CURLOPT_COOKIEFILE     => $cookiePath,
+                    CURLOPT_COOKIEJAR      => $cookiePath,
+                    CURLOPT_IPRESOLVE      => CURL_IPRESOLVE_V4,
+                    CURLOPT_USERAGENT      => self::getUserAgent(),
+                    CURLOPT_TIMEOUT        => 30,
                     CURLOPT_CONNECTTIMEOUT => 5,
-                    CURLOPT_ENCODING => '',
-                    CURLOPT_PROXY => $proxy['host'],
-                    CURLOPT_PROXYPORT => $proxy['port'],
-                    CURLOPT_PROXYUSERPWD => $proxy['user'] . ':' . $proxy['pass'],
-                    CURLOPT_BUFFERSIZE => 256,
-                    CURLOPT_WRITEFUNCTION => function ($ch, $chunk) use (
+                    CURLOPT_ENCODING       => '',
+                    CURLOPT_PROXY          => $proxy['host'],
+                    CURLOPT_PROXYPORT      => $proxy['port'],
+                    CURLOPT_PROXYUSERPWD   => $proxy['user'] . ':' . $proxy['pass'],
+                    CURLOPT_BUFFERSIZE     => 256,
+                    CURLOPT_WRITEFUNCTION  => function ($ch, $chunk) use (
                         &$buffer,
                         &$datas,
                         $id,
@@ -419,94 +414,78 @@ class ProductController extends Controller
                         &$winnerHandle,
                         &$product
                     ) {
-                        // Si ya hay respuesta válida
-                        if ($firstValidResponse) {
-                            // Abortamos cualquier handle que no sea el ganador
-                            if ($ch !== $winnerHandle) {
-                                return 0;
-                            }
+                        // Si ya se obtuvo una respuesta válida, abortamos los otros handles.
+                        if ($firstValidResponse && $ch !== $winnerHandle) {
+                            return 0;
                         }
 
-                        // Buscar thumbs
+                        // Procesar thumbs
                         if (!$imagesThumb && strpos($chunk, '[{"hiRes') !== false) {
                             $thumbsChunks .= $chunk;
                             $imagesThumb = self::getImages($thumbsChunks);
 
                             if ($imagesThumb) {
-                                // Asignamos el handle ganador si todavía no lo hemos hecho
                                 if (!$winnerHandle) {
                                     $winnerHandle = $ch;
                                 }
                                 $firstValidResponse = true;
 
                                 echo "<script>pData.thumbs = JSON.parse('" . json_encode($imagesThumb) . "');</script>";
+
                                 $html = '<div class="gallery clearfix">
     <div class="pics clearfix">
-      <div class="thumbs">
-
-      ';
-                                //$html = '<div class="flex space-x-2 thumbnails">';
+      <div class="thumbs">';
                                 $first = null;
                                 foreach ($imagesThumb as $image) {
                                     if(!$first){
                                         $first = $image;
                                     }
-                                    $html .= '
-        <div class="preview"> <a href="#" data-full="' . $image . '" data-title="Spring 2013 | Luna + Hill"> <img src="' . $image . '"/> </a> </div>
-                            ';
+                                    $html .= '<div class="preview">
+                                    <a href="#" data-full="' . $image . '" data-title="Spring 2013 | Luna + Hill">
+                                        <img src="' . $image . '"/>
+                                    </a>
+                                </div>';
                                 }
                                 $html .= '</div>
       <a href="' . $first . '" class="full" title="Spring 2013 | Luna + Hill">
-      <!-- first image is viewable to start -->
       <img src="' . $first . '"> </a>
     </div>
   </div>';
 
                                 $escapedHtml = json_encode($html);
                                 echo "<script>
-                            let wrapperMainImg = document.getElementById('wrapper-main-img');
-                            if(typeof wrapperMainImg !== 'undefined' && wrapperMainImg !== null){
-                                wrapperMainImg.style.display = 'none';
-                            }
-
-                            var content   = $escapedHtml;
-                            var container = document.querySelector('#thumbnails-wrapper');
-                            if (container) {
-                                container.insertAdjacentHTML('beforeend', content);
-                            }
-
-    $(document).ready(function(){
-
-        $('.preview a').on('click', function(){
-            $('.selected').removeClass('selected');
-            $(this).addClass('selected');
-            var picture = $(this).data();
-
-            event.preventDefault(); //prevents page from reloading every time you click a thumbnail
-
-
-            $('.full img').fadeOut( 100, function() {
-              $('.full img').attr('src', picture.full);
-              $('.full').attr('href', picture.full);
-              $('.full').attr('title', picture.title);
-
-          }).fadeIn();
-        });// end on click
-
-        $('.full').fancybox({
-            helpers : {
-                title: {
-                    type: 'inside'
-                }
-            },
-            closeBtn : true,
-        });
-    });//end doc ready
-                        </script>";
+                                let wrapperMainImg = document.getElementById('wrapper-main-img');
+                                if(wrapperMainImg){
+                                    wrapperMainImg.style.display = 'none';
+                                }
+                                var content = $escapedHtml;
+                                var container = document.querySelector('#thumbnails-wrapper');
+                                if (container) {
+                                    container.insertAdjacentHTML('beforeend', content);
+                                }
+                                // Se inicializan eventos para la galería
+                                $(document).ready(function(){
+                                    $('.preview a').on('click', function(event){
+                                        event.preventDefault();
+                                        $('.selected').removeClass('selected');
+                                        $(this).addClass('selected');
+                                        var picture = $(this).data();
+                                        $('.full img').fadeOut(100, function() {
+                                            $('.full img').attr('src', picture.full);
+                                            $('.full').attr('href', picture.full);
+                                            $('.full').attr('title', picture.title);
+                                        }).fadeIn();
+                                    });
+                                    $('.full').fancybox({
+                                        helpers : { title: { type: 'inside' } },
+                                        closeBtn : true,
+                                    });
+                                });
+                            </script>";
                             }
                         }
 
-                        // Buscar variantes
+                        // Procesar variantes
                         if (!$alreadyVariants) {
                             if ($formVariants) {
                                 $formVariants .= $chunk;
@@ -519,77 +498,66 @@ class ProductController extends Controller
                                 $formVariants .= $chunk;
                                 $variantsForm = true;
                             }
-                            if ($variantsDiv) {
-                                if ($formVariants && strpos($chunk, 'dp-cif aok-hidden') !== false) {
-                                    $formVariants .= $chunk;
-                                    $this->parseVariants($id, $formVariants);
-                                    $alreadyVariants = true;
-                                    // Asignamos handle ganador si no lo teníamos
-                                    if (!$winnerHandle) {
-                                        $winnerHandle = $ch;
-                                    }
-                                    $firstValidResponse = true;
-                                    $formVariants = "";
+                            if ($variantsDiv && $formVariants && strpos($chunk, 'dp-cif aok-hidden') !== false) {
+                                $formVariants .= $chunk;
+                                $this->parseVariants($id, $formVariants);
+                                $alreadyVariants = true;
+                                if (!$winnerHandle) {
+                                    $winnerHandle = $ch;
                                 }
+                                $firstValidResponse = true;
+                                $formVariants = "";
                             }
-                            if ($variantsForm) {
-                                if ($formVariants && strpos($chunk, '</form') !== false) {
-                                    $formVariants .= $chunk;
-                                    $this->parseVariants($id, $formVariants);
-                                    $alreadyVariants = true;
-                                    if (!$winnerHandle) {
-                                        $winnerHandle = $ch;
-                                    }
-                                    $firstValidResponse = true;
-                                    $formVariants = "";
+                            if ($variantsForm && $formVariants && strpos($chunk, '</form') !== false) {
+                                $formVariants .= $chunk;
+                                $this->parseVariants($id, $formVariants);
+                                $alreadyVariants = true;
+                                if (!$winnerHandle) {
+                                    $winnerHandle = $ch;
                                 }
+                                $firstValidResponse = true;
+                                $formVariants = "";
                             }
                         }
 
-                        // Acumulamos en $global
+                        // Acumula el contenido global
                         $global .= $chunk;
 
-                        // Parseamos chunk a chunk (si tu parser lo requiere)
+                        // Procesa el chunk (si el parser lo requiere)
                         $parsedProducts = AmazonProductParser::processHtmlChunks($chunk, $buffer, $datas, $id);
-
                         if ($parsedProducts && is_countable($parsedProducts) && count($parsedProducts) > 0) {
-                            // Asignamos el ganador si todavía no está
                             if (!$winnerHandle) {
                                 $winnerHandle = $ch;
                             }
                             $firstValidResponse = true;
 
-                            // Vemos qué tipo de dato se ha extraído
                             if (isset($parsedProducts['price'])) {
-                                $price = $parsedProducts['price'];
-                                $price = Price::cotizarDolar($price);
+                                $price = Price::cotizarDolar($parsedProducts['price']);
                                 echo "<script>
-                            pData.price = " . addslashes($price) . ";
-                            document.querySelector('.price-shimmer').style.display = 'none';
-                            document.querySelector('.product-data-price').textContent = '$ " . addslashes($price) . " MXN';
-                        </script>";
+                                pData.price = " . addslashes($price) . ";
+                                document.querySelector('.price-shimmer').style.display = 'none';
+                                document.querySelector('.product-data-price').textContent = '$ " . addslashes($price) . " MXN';
+                            </script>";
                             }
                             if (isset($parsedProducts['title'])) {
-                                $title = $parsedProducts['title'];
                                 echo "<script>
-                            pData.title = '" . addslashes($title) . "';
-                            document.querySelector('.title-shimmer-wrapper').style.display = 'none';
-                            document.querySelector('.product-data-title').textContent = '" . addslashes($title) . "';
-                        </script>";
+                                pData.title = '" . addslashes($parsedProducts['title']) . "';
+                                document.querySelector('.title-shimmer-wrapper').style.display = 'none';
+                                document.querySelector('.product-data-title').textContent = '" . addslashes($parsedProducts['title']) . "';
+                            </script>";
                             }
                             if (isset($parsedProducts['image'])) {
-                                $imageUrl = $parsedProducts['image'];
                                 echo "<script>
-                            pData.image = '" . addslashes($imageUrl) . "';
-                            const imgEl        = document.querySelector('.product-data-image');
-                            const imgElShimmer = document.querySelector('.image-placeholder');
-                            if(typeof imgElShimmer !== 'undefined' && imgElShimmer !== null){
-                                imgElShimmer.style.display = 'none';
-                                imgEl.style.display = 'block';
-                                imgEl.src = '" . addslashes($imageUrl) . "';
-                                imgEl.alt = 'Imagen del producto';
-                            }
-                        </script>";
+                                pData.image = '" . addslashes($parsedProducts['image']) . "';
+                                const imgEl = document.querySelector('.product-data-image');
+                                const imgElShimmer = document.querySelector('.image-placeholder');
+                                if(imgElShimmer){
+                                    imgElShimmer.style.display = 'none';
+                                    imgEl.style.display = 'block';
+                                    imgEl.src = '" . addslashes($parsedProducts['image']) . "';
+                                    imgEl.alt = 'Imagen del producto';
+                                }
+                            </script>";
                             }
                             if (isset($parsedProducts['rating'])) {
                                 $rating = floatval($parsedProducts['rating']);
@@ -663,13 +631,13 @@ class ProductController extends Controller
                         </script>";
                             }
 
-                            // Enviamos pequeños chunks para forzar el flush
-                            echo "<!-- chunk -->";
-                            echo str_repeat(" ", 1024);
+                            // Para ayudar al navegador a mostrar el contenido se pueden enviar comentarios o separadores,
+                            // pero se recomienda no enviar relleno excesivo.
+                            // echo "<!-- chunk -->";
+                            // echo str_repeat(" ", 1024);
                             flush();
                         }
 
-                        // Devolvemos la cantidad de bytes procesados
                         return strlen($chunk);
                     }
                 ]);
@@ -678,76 +646,39 @@ class ProductController extends Controller
                 $handles[] = $curl;
             }
 
-            // Ejecutamos el bucle principal de multi cURL
+            // Bucle principal de multi cURL
             do {
                 $status = curl_multi_exec($multiCurl, $active);
-                // Opcionalmente un pequeño timeout en select para no bloquear mucho
                 curl_multi_select($multiCurl, 0.2);
 
-                // Si ya hay un handle ganador
                 if ($firstValidResponse && $winnerHandle) {
-                    // Quitar del multiCurl todos los demás
                     foreach ($handles as $curl) {
                         if ($curl !== $winnerHandle) {
                             curl_multi_remove_handle($multiCurl, $curl);
                             curl_close($curl);
                         }
                     }
-                    // Dejamos en $handles solo el ganador
                     $handles = [$winnerHandle];
-                    // No hacemos break, para terminar de leer el HTML completo
                 }
             } while ($active && $status == CURLM_OK);
 
-            // Cerrar el handle final
             foreach ($handles as $curl) {
                 curl_multi_remove_handle($multiCurl, $curl);
                 curl_close($curl);
             }
-
-            /*
             curl_multi_close($multiCurl);
-
-            if ($global) {
-                // Parseo final (p. ej. si quieres extraer más cosas con tu parser “completo”)
-                $chapiAmazonProductDetailParser = new ChapiAmazonProductDetailParser($cookie);
-                $data = $chapiAmazonProductDetailParser->parse(["result" => $global], "amazon", $id, $cookie);
-
-                $dom = new DOMDocument();
-                @$dom->loadHTML($global);
-                $this->xpath = new DOMXPath($dom);
-                $variantsParser = new ChapiAmazonVariantsParser($this->xpath);
-                $variants = $variantsParser->parse($id, (int)$id, $dom);
-                if ($data && $variants) {
-                    $data->variants = $variants;
-                }
-                if ($data) {
-                    $data = trim(addslashes(json_encode($data)));
-                    if($data){
-                    echo "<script>product = JSON.parse('" . $data . "');</script>";
-                    echo "<script>
-                if(product){
-                    combinations = product.combination_separator;
-                    combinationSeparator = product.combinations;
-                    parsepDataC(pData, product);
-                }
-                </script>";
-                }
-                }
-            }*/
         } else {
-            // Aquí puedes manejar el caso en el que ya tienes el producto en la base de datos
+            // Manejo cuando ya se tiene el producto en la base de datos
         }
 
-        // Cerramos el HTML, footer y flush final
+        // Imprime el footer y cierra el HTML
         $endLayout = file_get_contents(resource_path('views/layouts/layoutEnd.blade.php'));
-        //$footer = file_get_contents(resource_path('views/components/footer.blade.php'));
         $endLayout = str_replace('{{ //QUERY }}', 'pid=' . $id, $endLayout);
         $endLayout = str_replace('{{ //FOOTER}}', "", $endLayout);
-
         echo $endLayout;
         flush();
     }
+
 
     private static function getImages($thumbsChunks): array
     {
