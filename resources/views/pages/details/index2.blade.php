@@ -107,7 +107,7 @@
 
     const extraDataProduct = async (asin) => {
         const csi = localStorage.getItem('client_session_id');
-        const l = 'http://laravel11.local/api/product/'+asin+'/amazon/direct/'+csi;
+        const l = '/api/product/'+asin+'/amazon/direct/'+csi;
         const urls = [l];
         const requestOptions = {
             method: 'GET',
@@ -403,7 +403,7 @@
         isLoading = true;
         isProductLoaded = false;
         //const apiUrl = `/rest/V1/chupaprecios/productdetail/?asin=${asin}&selected_store=${selectedStore}`;
-        const apiUrl = `http://laravel11.local/api/product/${parentProductId}/amazon/direct`;
+        const apiUrl = `/api/product/${parentProductId}/amazon/direct`;
 
         const requestOptions = {
             method: 'GET',

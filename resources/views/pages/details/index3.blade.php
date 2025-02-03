@@ -303,7 +303,7 @@
         isProductLoaded = false;
         //const apiUrl = `/rest/V1/chupaprecios/productdetail/?asin=${asin}&selected_store=${selectedStore}`;
         const csi = localStorage.getItem('client_session_id');
-        const apiUrl = `http://laravel11.local/productb/${parentProductId}/amazon/`+csi
+        const apiUrl = `/productb/${parentProductId}/amazon/`+csi
         return window.location = apiUrl;
 
         const requestOptions = {

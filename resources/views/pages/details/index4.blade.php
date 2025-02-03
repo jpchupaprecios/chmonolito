@@ -16,7 +16,7 @@
 
     const extraDataProduct = async (asin) => {
         const csi = localStorage.getItem('client_session_id');
-        const l = 'http://laravel11.local/api/product/'+asin+'/amazon/direct/'+csi;
+        const l = '/api/product/'+asin+'/amazon/direct/'+csi;
         const urls = [l];
         const requestOptions = {
             method: 'GET',

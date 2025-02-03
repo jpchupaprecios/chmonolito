@@ -188,7 +188,7 @@ class ProductController extends Controller
         $layoutStart = $this->showLayout($id, false);
 
         if($csi){
-            $urlIframe = '<iframe scrolling="no" style="width: 100%;height: 563px;" src="http://laravel11.local/productb/'.$id.'/amazon/'.$csi . '" ></iframe>';
+            $urlIframe = '<iframe scrolling="no" style="width: 100%;height: 563px;" src="/productb/'.$id.'/amazon/'.$csi . '" ></iframe>';
             $layoutStart = str_replace('{{ //IFRAME}}', $urlIframe, $layoutStart);
         }
 
