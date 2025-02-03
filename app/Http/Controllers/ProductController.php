@@ -365,13 +365,13 @@ class ProductController extends Controller
                 'port' => 10000,
                 'user' => 'customer-chupaprecios_COPc9_K2KrH',
                 'pass' => '+Aq1w2e3r4t5'
-            ],*/
+            ],
             [
                 'host' => 'pr.oxylabs.io',
                 'port' => 7777,
                 'user' => 'customer-jotapey3_qcf4a-cc-us',
                 'pass' => '+Aq1w2e3r4t5'
-            ],
+            ],*/
             /*[
                 'host' => 'pr.oxylabs.io',
                 'port' => 7777,
