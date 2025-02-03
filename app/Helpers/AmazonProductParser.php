@@ -97,27 +97,15 @@ class AmazonProductParser
             switch ($key) {
                 case "title":
                     $content = self::getTitle();
-                    if(strlen($fullHtml) > 300000){
-                        $content = "no title";
-                    }
                     break;
                 case "rating":
                     $content = self::getRating();
-                    if(strlen($fullHtml) > 300000){
-                        $content = "no rating";
-                    }
                     break;
                 case "price":
                     $content = self::getPrice();
-                    if(strlen($fullHtml) > 300000){
-                        $content = "no price";
-                    }
                     break;
                 case "image":
                     $content = self::getImage();
-                    if(strlen($fullHtml) > 300000){
-                        $content = "no image";
-                    }
                     break;
                 default:
                     /*$xpaths = is_array($elementConfig['xpath']) ? $elementConfig['xpath'] : [$elementConfig['xpath']];
@@ -287,9 +275,9 @@ class AmazonProductParser
         if (!mb_check_encoding($html, 'UTF-8')) {
             $html = mb_convert_encoding($html, 'UTF-8', 'auto');
         }
-        Log::debug("strlen: " . strlen($html));
+        //Log::debug("strlen: " . strlen($html));
         // Usa tidy si está disponible
-        if (extension_loaded('tidy')) {
+        /*if (extension_loaded('tidy')) {
             $config = [
                 'indent' => true,
                 'output-xhtml' => true,
@@ -301,7 +289,7 @@ class AmazonProductParser
 
             $cleanHtml = $tidy->repairString($html, $config, 'utf8');
             return $cleanHtml;
-        }
+        }*/
 
         // Fallback: Agregar etiquetas básicas si tidy no está disponible
         if (stripos($html, '<html') === false) {
