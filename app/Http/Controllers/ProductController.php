@@ -390,7 +390,7 @@ class ProductController extends Controller
                     CURLOPT_RETURNTRANSFER => false, // Se usará WRITEFUNCTION para gestionar la salida
                     CURLOPT_COOKIEFILE     => $cookiePath,
                     CURLOPT_COOKIEJAR      => $cookiePath,
-                    CURLOPT_IPRESOLVE      => CURL_IPRESOLVE_V4,
+                    //CURLOPT_IPRESOLVE      => CURL_IPRESOLVE_V4,
                     CURLOPT_USERAGENT      => self::getUserAgent(),
                     CURLOPT_TIMEOUT        => 30,
                     CURLOPT_CONNECTTIMEOUT => 5,
@@ -398,7 +398,7 @@ class ProductController extends Controller
                     CURLOPT_PROXY          => $proxy['host'],
                     CURLOPT_PROXYPORT      => $proxy['port'],
                     CURLOPT_PROXYUSERPWD   => $proxy['user'] . ':' . $proxy['pass'],
-                    CURLOPT_BUFFERSIZE     => 256,
+                    CURLOPT_BUFFERSIZE     => 1024,
                     CURLOPT_WRITEFUNCTION  => function ($ch, $chunk) use (
                         &$buffer,
                         &$datas,
