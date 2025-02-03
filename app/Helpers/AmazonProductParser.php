@@ -4,6 +4,7 @@ namespace App\Helpers;
 use App\Helpers\ChunkProductHelper;
 use DOMDocument;
 use DOMXPath;
+use Illuminate\Support\Facades\Log;
 use tidy;
 use stdClass;
 
@@ -285,6 +286,7 @@ class AmazonProductParser
                 'output-encoding' => 'utf8',
             ];
             $tidy = new tidy();
+            Log::debug("strlen: " . strlen($html));
             $cleanHtml = $tidy->repairString($html, $config, 'utf8');
             return $cleanHtml;
         }
