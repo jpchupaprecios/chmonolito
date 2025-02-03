@@ -354,12 +354,12 @@ class ProductController extends Controller
 
         // Lista de proxies
         $proxies = [
-            /*[
+            [
                 'host' => 'dc.oxylabs.io',
                 'port' => 8000,
                 'user' => 'user-chupaprecios_lDWEa-country-US',
                 'pass' => '+Aq1w2e3r4t5'
-            ],*/
+            ],
             /*[
                 'host' => 'us-pr.oxylabs.io',
                 'port' => 10000,
