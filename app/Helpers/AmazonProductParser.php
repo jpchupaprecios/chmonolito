@@ -270,7 +270,6 @@ class AmazonProductParser
 
     private static function repairHtml(string $html): string
     {
-        set_time_limit(120);
         // Convierte a UTF-8 si no lo está
         if (!mb_check_encoding($html, 'UTF-8')) {
             $html = mb_convert_encoding($html, 'UTF-8', 'auto');
@@ -285,9 +284,9 @@ class AmazonProductParser
                 'input-encoding' => 'utf8',
                 'output-encoding' => 'utf8',
             ];
-            $tidy = new tidy();
-            $cleanHtml = $tidy->repairString($html, $config, 'utf8');
-            return $cleanHtml;
+            //$tidy = new tidy();
+            //$cleanHtml = $tidy->repairString($html, $config, 'utf8');
+            //return $cleanHtml;
         }
 
         // Fallback: Agregar etiquetas básicas si tidy no está disponible

@@ -176,7 +176,7 @@ class ProductController extends Controller
         return $colorsDiv;
     }
 
-    public function index(Request $request, $id, $vendor, $csi = null){
+    public function index(Request $request, $id, $vendor, $csi = ""){
         // Configura las cabeceras para streaming
         //header('Content-Type: text/html; charset=UTF-8');
         //header('Cache-Control: no-cache');
@@ -187,10 +187,8 @@ class ProductController extends Controller
         // Imprimimos el layout base
         $layoutStart = $this->showLayout($id, false);
 
-        if($csi){
-            $urlIframe = '<iframe scrolling="no" style="width: 100%;height: 563px;" src="/productb/'.$id.'/amazon/'.$csi . '" ></iframe>';
-            $layoutStart = str_replace('{{ //IFRAME}}', $urlIframe, $layoutStart);
-        }
+        $urlIframe = '<iframe scrolling="no" style="width: 100%;height: 563px;" src="/productb/'.$id.'/amazon/'.$csi . '" ></iframe>';
+        $layoutStart = str_replace('{{ //IFRAME}}', $urlIframe, $layoutStart);
 
 
         $breadcrumb = file_get_contents(resource_path('views/pages/details/components/breadcrumb.blade.php'));
@@ -382,7 +380,7 @@ class ProductController extends Controller
         $winnerHandle = null;
         $firstValidResponse = false;
         $buffer = '';  // Buffer global para el parser, si se requiere
-        $nombreArchivo = date("Y-m-d") . "-amazon-" . $id . ".html";
+        //$nombreArchivo = date("Y-m-d") . "-amazon-" . $id . ".html";
         Log::debug("hasta aca 2");
         if (!$product) {
             foreach ($proxies as $proxy) {
@@ -415,11 +413,10 @@ class ProductController extends Controller
                         &$imagesThumb,
                         &$firstValidResponse,
                         &$winnerHandle,
-                        &$product,
-                        &$nombreArchivo
+                        &$product
                     ) {
                         //crea el archivo $nombreArchivo en la carpeta public con extension html y va agregando el $chunk en cada iteracion
-                        file_put_contents(public_path($nombreArchivo), $chunk, FILE_APPEND);
+                        //file_put_contents(public_path($nombreArchivo), $chunk, FILE_APPEND);
                         // Si ya se obtuvo una respuesta válida, abortamos los otros handles.
                         if ($firstValidResponse && $ch !== $winnerHandle) {
                             return 0;
