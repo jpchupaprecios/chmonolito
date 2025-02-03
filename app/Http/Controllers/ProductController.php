@@ -14,6 +14,7 @@ use DOMXPath;
 use App\Models\Product;
 use App\Parsers\Chapi\Amazon\Complete\Product\ChapiAmazonProductDetailParser;
 use App\Helpers\Price;
+use Illuminate\Support\Facades\Log;
 class ProductController extends Controller
 {
     private static $userAgent;
@@ -421,6 +422,7 @@ class ProductController extends Controller
 
                         // Procesar thumbs
                         if (!$imagesThumb && strpos($chunk, '[{"hiRes') !== false) {
+                            Log::debug($chunk);
                             $thumbsChunks .= $chunk;
                             $imagesThumb = self::getImages($thumbsChunks);
 
