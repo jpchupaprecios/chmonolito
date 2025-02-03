@@ -291,9 +291,9 @@ class AmazonProductParser
                 'input-encoding' => 'utf8',
                 'output-encoding' => 'utf8',
             ];
-            //$tidy = new tidy();
-            //$cleanHtml = $tidy->repairString($html, $config, 'utf8');
-            //return $cleanHtml;
+            $tidy = new tidy();
+            $cleanHtml = $tidy->repairString($html, $config, 'utf8');
+            return $cleanHtml;
         }
 
         // Fallback: Agregar etiquetas básicas si tidy no está disponible
