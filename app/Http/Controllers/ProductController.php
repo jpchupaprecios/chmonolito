@@ -6,13 +6,9 @@ use App\Helpers\AmazonProductParser;
 use App\Helpers\SymfonyPanther;
 use App\Models\ScrapingSession;
 use App\Parsers\Chapi\Amazon\Product\Variants\ChapiAmazonVariantsParser;
-use App\Services\CookieService;
 use Illuminate\Http\Request;
-use App\Helpers\AmazonSearchParser;
 use DOMDocument;
 use DOMXPath;
-use App\Models\Product;
-use App\Parsers\Chapi\Amazon\Complete\Product\ChapiAmazonProductDetailParser;
 use App\Helpers\Price;
 class ProductController extends Controller
 {
@@ -411,8 +407,8 @@ class ProductController extends Controller
                         &$winnerHandle,
                         &$product
                     ) {
-                        $nombreArchivo = date("Y-m-d") . "-amazon-" . $id . ".html";
-                        file_put_contents(public_path($nombreArchivo), $chunk, FILE_APPEND);
+                        //$nombreArchivo = date("Y-m-d") . "-amazon-" . $id . ".html";
+                        //file_put_contents(public_path($nombreArchivo), $chunk, FILE_APPEND);
                         //crea el archivo $nombreArchivo en la carpeta public con extension html y va agregando el $chunk en cada iteracion
 
                         // Si ya se obtuvo una respuesta válida, abortamos los otros handles.
