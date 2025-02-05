@@ -53,6 +53,7 @@ final class NotAllowed
             "isagenix",
         ];
 
+        //https://themarkup.org/show-your-work/2020/06/18/how-we-investigated-banned-items-on-amazon-com
         $this->notAllowedKeywords = [
             "isagenix",
             "Hemp",
