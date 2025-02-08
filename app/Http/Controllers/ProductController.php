@@ -182,7 +182,7 @@ class ProductController extends Controller
         // Imprimimos el layout base
         $layoutStart = $this->showLayout($id, false);
 
-        $urlIframe = '<iframe scrolling="no" style="width: 100%;height: 563px;" src="/productb/'.$id.'/amazon/'.$csi . '" ></iframe>';
+        $urlIframe = '<iframe scrolling="no" style="width: 100%;height: 650px;" src="/productb/'.$id.'/amazon/'.$csi . '" ></iframe>';
         $layoutStart = str_replace('{{ //IFRAME}}', $urlIframe, $layoutStart);
 
 
