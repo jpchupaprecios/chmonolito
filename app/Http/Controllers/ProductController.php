@@ -349,12 +349,12 @@ class ProductController extends Controller
                 'user' => 'user-chupaprecios_lDWEa-country-US',
                 'pass' => '+Aq1w2e3r4t5'
             ],
-            [
+            /*[
                 'host' => 'pr.oxylabs.io',
                 'port' => 7777,
                 'user' => 'customer-jotapey3_qcf4a-cc-us',
                 'pass' => '+Aq1w2e3r4t5'
-            ],
+            ],*/
         ];
 
         $multiCurl = curl_multi_init();
